@@ -45,7 +45,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
   </head>
@@ -91,9 +91,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       }
       
       html {
-        font-family: 'Noto Sans Arabic', system-ui, sans-serif;
+        font-family: 'Cairo', 'Segoe UI', 'Tahoma', 'Dejavu Sans', 'Helvetica Neue', Arial, sans-serif;
         line-height: 1.6;
         scroll-behavior: smooth;
+        font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
       
       body {
@@ -107,24 +111,29 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       .container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 0 1rem;
+        padding: 0 3rem;
       }
       
       /* Header */
       .header {
-        background-color: var(--bg-primary);
+        background-color: rgba(255, 255, 255, 0.95);
         border-bottom: 1px solid var(--border-color);
         position: sticky;
         top: 0;
         z-index: 100;
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       }
       
       .nav {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 1rem;
+        padding: 1.5rem 0;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding-left: 3rem;
+        padding-right: 3rem;
       }
       
       .logo h1 {
@@ -153,7 +162,18 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
       /* Main */
       .main {
         flex: 1;
-        padding: 2rem 0;
+        padding: 3rem 0;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: calc(100vh - 200px);
+      }
+      
+      .main > * {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 3rem;
       }
       
       /* Footer */
@@ -164,9 +184,15 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         margin-top: auto;
       }
       
+      .footer .container {
+        max-width: 1200px;
+        padding: 0 3rem;
+      }
+      
       .footer p {
         text-align: center;
         color: var(--text-secondary);
+        font-size: 0.9rem;
       }
       
       /* Responsive */
@@ -174,14 +200,42 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
         .nav {
           flex-direction: column;
           gap: 1rem;
+          padding: 1rem 2rem;
         }
         
         .nav-links {
           gap: 1rem;
         }
         
-        .container {
-          padding: 0 0.75rem;
+        .container,
+        .footer .container,
+        .main > * {
+          padding: 0 2rem;
+        }
+        
+        .main {
+          padding: 2rem 0;
+          min-height: calc(100vh - 180px);
+        }
+      }
+      
+      @media (max-width: 480px) {
+        .nav {
+          padding: 1rem 0.5rem;
+        }
+        
+        .container,
+        .footer .container,
+        .main > * {
+          padding: 0 1rem;
+        }
+        
+        .main {
+          padding: 1.5rem 0;
+        }
+        
+        .logo h1 {
+          font-size: 1.25rem;
         }
       }
     </style>
