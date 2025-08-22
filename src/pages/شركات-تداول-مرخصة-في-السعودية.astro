@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import BrokerList from '../components/BrokerList.astro';
 
 // API configuration
 const API_CONFIG = {
@@ -129,6 +130,12 @@ try {
             </div>
           </div>
         </header>
+
+        <!-- Dynamic Broker List Component -->
+        <BrokerList 
+          title="أفضل شركات التداول في منطقتك"
+          subtitle="شركات مرخصة وموثوقة مرتبة حسب موقعك الجغرافي"
+        />
 
         <!-- Dynamic Content Section -->
         <main class="content-main">

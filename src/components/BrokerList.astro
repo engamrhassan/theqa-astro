@@ -1,0 +1,442 @@
+---
+// src/components/BrokerList.astro
+export interface Props {
+  title?: string;
+  subtitle?: string;
+  showPlaceholder?: boolean;
+}
+
+const { 
+  title = "أفضل شركات التداول في منطقتك", 
+  subtitle = "شركات مرخصة وموثوقة مرتبة حسب موقعك الجغرافي",
+  showPlaceholder = true 
+} = Astro.props;
+---
+
+<section class="brokers-section">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">{title}</h2>
+      {subtitle && <p class="section-subtitle">{subtitle}</p>}
+      <div class="country-indicator">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5Z" fill="currentColor"/>
+        </svg>
+        <span>مرتبة خصيصاً لموقعك</span>
+      </div>
+    </div>
+
+    {showPlaceholder && (
+      <div class="brokers-placeholder">
+        <!-- BROKERS_PLACEHOLDER -->
+        <div class="default-brokers">
+          <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <p>جاري تحميل أفضل شركات التداول في منطقتك...</p>
+          </div>
+          
+          <!-- Fallback broker cards (shown if Worker doesn't work) -->
+          <div class="fallback-brokers">
+            <div class="broker-card-fallback">
+              <div class="broker-placeholder">
+                <div class="placeholder-content">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2"/>
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  <span>شركة تداول موثوقة</span>
+                </div>
+              </div>
+              <div class="broker-content">
+                <h3>شركات التداول المرخصة</h3>
+                <p>سيتم عرض أفضل شركات التداول المناسبة لموقعك الجغرافي هنا</p>
+                <div class="broker-features">
+                  <div class="feature">✓ مرخصة ومنظمة</div>
+                  <div class="feature">✓ دعم اللغة العربية</div>
+                  <div class="feature">✓ مناسبة لمنطقتك</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    <!-- Important Notice -->
+    <div class="important-notice">
+      <div class="notice-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.52 22 12 17.48 2 12 2ZM13 17H11V11H13V17ZM13 9H11V7H13V9Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="notice-content">
+        <h4>تنبيه هام</h4>
+        <p>التداول ينطوي على مخاطر. تأكد من فهم المخاطر قبل الاستثمار ولا تستثمر أكثر مما يمكنك تحمل خسارته.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .brokers-section {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    padding: 3rem 0;
+    margin: 3rem 0;
+    border-radius: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .brokers-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(79, 70, 229, 0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)"/></svg>');
+    opacity: 0.5;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .section-title {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .section-subtitle {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+
+  .country-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--primary-color);
+    padding: 0.75rem 1.5rem;
+    border-radius: 2rem;
+    font-weight: 500;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+  }
+
+  .brokers-placeholder {
+    min-height: 400px;
+    position: relative;
+  }
+
+  /* Loading State */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+  }
+
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(37, 99, 235, 0.1);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1.5rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .loading-state p {
+    color: var(--text-secondary);
+    font-size: 1.125rem;
+  }
+
+  /* Fallback Brokers */
+  .fallback-brokers {
+    display: none; /* Will be shown if JS/Worker fails */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .broker-card-fallback {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  .broker-card-fallback:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .broker-placeholder {
+    height: 150px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .placeholder-content span {
+    font-weight: 500;
+    font-size: 0.875rem;
+  }
+
+  .broker-content {
+    padding: 1.5rem;
+  }
+
+  .broker-content h3 {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+
+  .broker-content p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .broker-features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .feature {
+    background: var(--bg-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* Important Notice */
+  .important-notice {
+    background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+    border: 1px solid #f59e0b;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-top: 3rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .notice-icon {
+    background: #f59e0b;
+    color: white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .notice-content h4 {
+    color: #92400e;
+    margin-bottom: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+  }
+
+  .notice-content p {
+    color: #78350f;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* Dynamic broker styles (added by Worker) */
+  :global(.companies-grid) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  :global(.company-card) {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  :global(.company-card::before) {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  }
+
+  :global(.company-card:hover) {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  :global(.company-placeholder) {
+    height: 160px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+
+  :global(.company-placeholder::before) {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="lines" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40L40 0H20L0 20M40 40V20L20 40" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23lines)"/></svg>');
+  }
+
+  :global(.company-content) {
+    padding: 1.5rem;
+  }
+
+  :global(.company-content h3) {
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+  }
+
+  :global(.company-content p) {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+    font-size: 0.95rem;
+  }
+
+  :global(.company-features) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  :global(.company-features .feature) {
+    background: var(--bg-secondary);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    border: 1px solid var(--border-color);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .brokers-section {
+      padding: 2rem 0;
+      margin: 2rem 0;
+    }
+
+    .container {
+      padding: 0 1rem;
+    }
+
+    .section-title {
+      font-size: 2rem;
+    }
+
+    .section-subtitle {
+      font-size: 1rem;
+    }
+
+    .important-notice {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .notice-icon {
+      margin: 0 auto;
+    }
+
+    :global(.companies-grid) {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .section-title {
+      font-size: 1.75rem;
+    }
+
+    .country-indicator {
+      font-size: 0.875rem;
+      padding: 0.5rem 1rem;
+    }
+  }
+</style>
+
+<script>
+  // Show fallback brokers if loading takes too long
+  setTimeout(() => {
+    const loadingState = document.querySelector('.loading-state');
+    const fallbackBrokers = document.querySelector('.fallback-brokers');
+    
+    if (loadingState && fallbackBrokers) {
+      // Check if dynamic content was loaded
+      const dynamicContent = document.querySelector('.companies-grid');
+      
+      if (!dynamicContent) {
+        loadingState.style.display = 'none';
+        fallbackBrokers.style.display = 'grid';
+      }
+    }
+  }, 3000); // Show fallback after 3 seconds
+</script>
