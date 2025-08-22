@@ -1,0 +1,189 @@
+---
+export interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  article?: boolean;
+}
+
+const { title, description = 'مدونة عربية متميزة', image = '/og-default.jpg', article = false } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalURL} />
+    
+    <!-- Primary Meta Tags -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    <meta property="og:url" content={Astro.url} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, Astro.url)} />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={Astro.url} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={new URL(image, Astro.url)} />
+    
+    <!-- Arabic Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header class="header">
+      <nav class="nav container">
+        <a href="/" class="logo">
+          <h1>المدونة العربية</h1>
+        </a>
+        <ul class="nav-links">
+          <li><a href="/">الرئيسية</a></li>
+          <li><a href="/articles">المقالات</a></li>
+        </ul>
+      </nav>
+    </header>
+    
+    <main class="main">
+      <slot />
+    </main>
+    
+    <footer class="footer">
+      <div class="container">
+        <p>&copy; 2024 المدونة العربية. جميع الحقوق محفوظة.</p>
+      </div>
+    </footer>
+    
+    <style>
+      :root {
+        --primary-color: #2563eb;
+        --secondary-color: #1e40af;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --bg-primary: #ffffff;
+        --bg-secondary: #f9fafb;
+        --border-color: #e5e7eb;
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      }
+      
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      
+      html {
+        font-family: 'Noto Sans Arabic', system-ui, sans-serif;
+        line-height: 1.6;
+        scroll-behavior: smooth;
+      }
+      
+      body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+      }
+      
+      /* Header */
+      .header {
+        background-color: var(--bg-primary);
+        border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(8px);
+      }
+      
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1rem;
+      }
+      
+      .logo h1 {
+        color: var(--primary-color);
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+      
+      .nav-links {
+        display: flex;
+        list-style: none;
+        gap: 2rem;
+      }
+      
+      .nav-links a {
+        color: var(--text-primary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+      }
+      
+      .nav-links a:hover {
+        color: var(--primary-color);
+      }
+      
+      /* Main */
+      .main {
+        flex: 1;
+        padding: 2rem 0;
+      }
+      
+      /* Footer */
+      .footer {
+        background-color: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        padding: 2rem 0;
+        margin-top: auto;
+      }
+      
+      .footer p {
+        text-align: center;
+        color: var(--text-secondary);
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        .nav {
+          flex-direction: column;
+          gap: 1rem;
+        }
+        
+        .nav-links {
+          gap: 1rem;
+        }
+        
+        .container {
+          padding: 0 0.75rem;
+        }
+      }
+    </style>
+  </body>
+</html>

@@ -1,16 +1,293 @@
 ---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
 
+// Get all published articles
+const allArticles = await getCollection('articles', ({ data }) => {
+  return !data.draft;
+});
+
+// Sort articles by date (newest first)
+const sortedArticles = allArticles.sort((a, b) => 
+  new Date(b.data.publishDate).getTime() - new Date(a.data.publishDate).getTime()
+);
+
+// Get featured articles and recent articles
+const featuredArticles = sortedArticles.filter(article => article.data.featured).slice(0, 3);
+const recentArticles = sortedArticles.slice(0, 6);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title="المدونة العربية - الصفحة الرئيسية" description="اكتشف أحدث المقالات والموضوعات المتنوعة في مدونتنا العربية">
+  <div class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1>أهلاً بك في المدونة العربية</h1>
+      <p>اكتشف عالماً من المعرفة والإلهام من خلال مقالاتنا المتنوعة</p>
+      <a href="/articles" class="cta-button">تصفح جميع المقالات</a>
+    </section>
+
+    <!-- Featured Articles -->
+    {featuredArticles.length > 0 && (
+      <section class="featured-section">
+        <h2>المقالات المميزة</h2>
+        <div class="featured-grid">
+          {featuredArticles.map((article) => (
+            <article class="featured-card">
+              <a href={`/articles/${article.slug}`}>
+                <img 
+                  src={article.data.image.src} 
+                  alt={article.data.imageAlt}
+                  loading="lazy"
+                />
+                <div class="card-content">
+                  <h3>{article.data.title}</h3>
+                  <p>{article.data.description}</p>
+                  <div class="card-meta">
+                    <span class="author">{article.data.author}</span>
+                    <time datetime={article.data.publishDate.toISOString()}>
+                      {article.data.publishDate.toLocaleDateString('ar-EG', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </time>
+                  </div>
+                </div>
+              </a>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- Recent Articles -->
+    <section class="recent-section">
+      <h2>أحدث المقالات</h2>
+      <div class="articles-grid">
+        {recentArticles.map((article) => (
+          <article class="article-card">
+            <a href={`/articles/${article.slug}`}>
+              <img 
+                src={article.data.image.src} 
+                alt={article.data.imageAlt}
+                loading="lazy"
+              />
+              <div class="card-content">
+                <h3>{article.data.title}</h3>
+                <p>{article.data.description}</p>
+                <div class="card-meta">
+                  <span class="author">{article.data.author}</span>
+                  <time datetime={article.data.publishDate.toISOString()}>
+                    {article.data.publishDate.toLocaleDateString('ar-EG', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </time>
+                </div>
+                {article.data.tags.length > 0 && (
+                  <div class="tags">
+                    {article.data.tags.slice(0, 3).map((tag) => (
+                      <span class="tag">{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </a>
+          </article>
+        ))}
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  /* Hero Section */
+  .hero {
+    text-align: center;
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: -2rem -1rem 3rem -1rem;
+    border-radius: 0 0 2rem 2rem;
+  }
+  
+  .hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+  
+  .hero p {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+  }
+  
+  .cta-button {
+    display: inline-block;
+    background: white;
+    color: #667eea;
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .cta-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Section Styling */
+  .featured-section,
+  .recent-section {
+    margin-bottom: 3rem;
+  }
+  
+  .featured-section h2,
+  .recent-section h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--primary-color);
+    border-bottom: 3px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+  }
+
+  /* Featured Grid */
+  .featured-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+  }
+  
+  .featured-card {
+    background: white;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--border-color);
+  }
+  
+  .featured-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Articles Grid */
+  .articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+  
+  .article-card {
+    background: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--border-color);
+  }
+  
+  .article-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Card Content */
+  .featured-card a,
+  .article-card a {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .featured-card img,
+  .article-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+  }
+  
+  .featured-card img {
+    height: 250px;
+  }
+  
+  .card-content {
+    padding: 1.5rem;
+  }
+  
+  .card-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+    color: var(--text-primary);
+  }
+  
+  .card-content p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+  
+  .card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+  
+  .author {
+    font-weight: 500;
+    color: var(--primary-color);
+  }
+  
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .tag {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero {
+      padding: 2rem 1rem;
+      margin: -2rem -0.75rem 2rem -0.75rem;
+    }
+    
+    .hero h1 {
+      font-size: 2rem;
+    }
+    
+    .hero p {
+      font-size: 1rem;
+    }
+    
+    .featured-grid,
+    .articles-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .card-content {
+      padding: 1rem;
+    }
+  }
+</style>
