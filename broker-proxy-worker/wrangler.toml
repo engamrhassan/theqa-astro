@@ -5,4 +5,4 @@ compatibility_date = "2025-08-22"
 [[d1_databases]]
 binding = "DB"
 database_name = "broker-sorting-db"
-database_id = "0e441d59-b7d3-4715-add4-01f07bf315c5"
+database_id = "ba34ff09-69bb-4c57-989b-92f07aa8015a"

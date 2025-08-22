@@ -8,14 +8,27 @@ export default {
       // Parse the request URL
       const url = new URL(request.url);
       
+      // Check if this is a request to the Pages domain that should be proxied
+      if (url.hostname === 'theqa-astro.pages.dev') {
+        // This is a request from the actual Pages site - process it
+        console.log('Pages domain request - processing');
+      }
+      
       // Check if this is a direct worker access for testing
       if (url.hostname.includes('workers.dev')) {
         // For direct worker testing, always process the request
         console.log('Direct worker access - processing request');
+        console.log('Request path:', url.pathname);
+        console.log('User country:', countryCode);
         
         // If no specific path, fetch the broker page from your Pages site
-        if (url.pathname === '/' || url.pathname.includes('شركات-تداول-مرخصة-في-السعودية')) {
-          const targetUrl = 'https://theqa-astro.pages.dev/شركات-تداول-مرخصة-في-السعودية/';
+        if (url.pathname === '/' || 
+            url.pathname.includes('شركات-تداول-مرخصة-في-السعودية') ||
+            url.pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') ||
+            decodeURIComponent(url.pathname).includes('شركات-تداول-مرخصة-في-السعودية')) {
+          const targetUrl = 'https://theqa-astro-test.pages.dev/شركات-تداول-مرخصة-في-السعودية/';
+          console.log('Fetching from:', targetUrl);
+          
           const originalResponse = await fetch(targetUrl);
           
           if (!originalResponse.ok) {
@@ -24,9 +37,12 @@ export default {
 
           // Get the HTML content
           let html = await originalResponse.text();
+          console.log('HTML length:', html.length);
+          console.log('Contains placeholder:', html.includes('BROKERS_PLACEHOLDER'));
 
           // Fetch broker data based on country code from D1 database
           const brokerData = await getBrokersForCountry(env.DB, countryCode);
+          console.log('Broker data count:', brokerData.length);
           
           // Inject the broker data into the HTML
           html = injectBrokerData(html, brokerData);
@@ -41,7 +57,8 @@ export default {
               'Content-Type': 'text/html; charset=utf-8',
               'X-Country-Code': countryCode,
               'X-Cache-Status': 'DIRECT-WORKER',
-              'X-Broker-Count': brokerData.length.toString()
+              'X-Broker-Count': brokerData.length.toString(),
+              'X-Placeholder-Found': html.includes('BROKERS_PLACEHOLDER') ? 'true' : 'false'
             }
           });
         } else {
@@ -49,8 +66,9 @@ export default {
           return new Response(`
             <h1>Broker Proxy Worker - Test Mode</h1>
             <p>Worker is running! Your country: ${countryCode}</p>
+            <p>Current path: ${url.pathname}</p>
             <p>Test the broker page: <a href="/شركات-تداول-مرخصة-في-السعودية">شركات التداول</a></p>
-            <p>Or visit: <a href="https://theqa-astro.pages.dev/شركات-تداول-مرخصة-في-السعودية/">Your actual site</a></p>
+            <p>Or visit: <a href="https://theqa-astro-test.pages.dev/شركات-تداول-مرخصة-في-السعودية/">Your actual site</a></p>
           `, {
             headers: { 'Content-Type': 'text/html; charset=utf-8' }
           });
@@ -58,7 +76,9 @@ export default {
       }
       
       // Only process the broker page (Arabic URL) for proxied requests
-      if (!url.pathname.includes('شركات-تداول-مرخصة-في-السعودية')) {
+      if (!url.pathname.includes('شركات-تداول-مرخصة-في-السعودية') && 
+          !url.pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') &&
+          !decodeURIComponent(url.pathname).includes('شركات-تداول-مرخصة-في-السعودية')) {
         // For other pages, just pass through to origin
         return fetch(request);
       }
@@ -209,10 +229,21 @@ function injectBrokerData(html, brokers) {
 // Function to generate broker HTML (Arabic-styled for your site)
 function generateBrokerHtml(brokers) {
   if (!brokers || brokers.length === 0) {
-    return '<p style="text-align: center; color: #6b7280; padding: 2rem;">لا توجد شركات تداول متاحة في منطقتك حالياً.</p>';
+    return `
+      <div style="background: #fee2e2; border: 2px solid #dc2626; padding: 1rem; margin: 1rem; border-radius: 8px;">
+        <h3 style="color: #dc2626;">⚠️ Debug: No broker data</h3>
+        <p>No brokers found in database for this country</p>
+      </div>
+    `;
   }
 
-  let html = '<section class="brokers-section"><div class="companies-grid">';
+  let html = `
+    <div style="background: #d1fae5; border: 2px solid #10b981; padding: 1rem; margin: 1rem; border-radius: 8px;">
+      <h3 style="color: #10b981;">✅ Debug: Worker injected data successfully!</h3>
+      <p>Found ${brokers.length} brokers for country: ${getCountryName()}</p>
+    </div>
+    <section class="brokers-section"><div class="companies-grid">
+  `;
   
   brokers.forEach((broker, index) => {
     html += `
@@ -231,7 +262,7 @@ function generateBrokerHtml(brokers) {
           <h3>${broker.name}</h3>
           <p>${broker.description}</p>
           <div class="company-features">
-            <div class="feature">الحد الأدنى للإيداع: $${broker.min_deposit}</div>
+            <div class="feature">الحد الأدنى للإيداع: ${broker.min_deposit}</div>
             <div class="feature">التقييم: ${'★'.repeat(Math.floor(broker.rating))} (${broker.rating})</div>
             <div class="feature">ترتيب: #${index + 1} في ${getCountryName()}</div>
           </div>
@@ -276,6 +307,6 @@ function getCountryName() {
   };
   
   // This will be set by the worker based on the user's country
-  const userCountry = globalThis.currentUserCountry || 'SA';
+  const userCountry = globalThis.currentUserCountry ;
   return countryNames[userCountry] || 'منطقتك';
 }
