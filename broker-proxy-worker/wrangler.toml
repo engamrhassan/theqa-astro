@@ -1,0 +1,14 @@
+name = "broker-proxy-worker"
+main = "worker.js"
+compatibility_date = "2025-08-22"
+
+# Routes should be at root level
+routes = [
+  "theqa-astro.pages.dev/شركات-تداول-مرخصة-في-السعودية*"
+]
+
+
+[[d1_databases]]
+binding = "DB"
+database_name = "broker-sorting-db"
+database_id = "0e441d59-b7d3-4715-add4-01f07bf315c5"

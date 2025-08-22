@@ -27,10 +27,6 @@ try {
   }
   
   const data = await response.json();
-  console.log('Full API Response keys:', Object.keys(data));
-  console.log('API Response data field:', data.data ? 'exists' : 'missing');
-  console.log('API Response content field:', data.content ? `exists (${data.content.length} chars)` : 'missing');
-  console.log('API Response title:', data.title);
   
   // Try different ways to extract the content
   let extractedContent = '';
@@ -39,14 +35,9 @@ try {
   if (data.data && data.data.content) {
     extractedContent = data.data.content;
     extractedTitle = data.data.title;
-    console.log('Using data.data structure');
   } else if (data.content) {
     extractedContent = data.content;
     extractedTitle = data.title;
-    console.log('Using direct structure');
-  } else {
-    console.log('No content found in expected locations');
-    console.log('Available fields:', Object.keys(data));
   }
   
   pageData = {
@@ -56,13 +47,7 @@ try {
     meta_description: data.meta_description || data.meta?.description || '',
     updated_at: data.updated_at || new Date().toISOString()
   };
-  
-  console.log('Final pageData:', {
-    title: pageData.title,
-    contentLength: pageData.content?.length || 0,
-    hasContent: !!pageData.content,
-    contentPreview: pageData.content?.substring(0, 100) + '...'
-  });
+
 } catch (err) {
   console.error('Error fetching page data:', err);
   error = err instanceof Error ? err.message : 'حدث خطأ في تحميل البيانات';
@@ -75,15 +60,10 @@ try {
       
       <p>تشهد المملكة العربية السعودية نمواً متسارعاً في قطاع الاستثمار والتداول، حيث تلعب هيئة السوق المالية دوراً محورياً في تنظيم وترخيص شركات التداول. من المهم جداً التعامل مع الشركات المرخصة فقط لضمان حماية استثماراتك وحقوقك كمستثمر.</p>
 
-      <h3>أهم شركات التداول المرخصة</h3>
+      <h3>أفضل شركات التداول في منطقتك</h3>
       
-      <ul>
-        <li><strong>شركة الراجحي المالية:</strong> إحدى أكبر شركات الاستثمار في المملكة</li>
-        <li><strong>شركة الأهلي كابيتال:</strong> شركة رائدة في الخدمات المصرفية الاستثمارية</li>
-        <li><strong>شركة سامبا كابيتال:</strong> تقدم خدمات متنوعة في الاستثمار والتداول</li>
-        <li><strong>شركة جدوى للاستثمار:</strong> متخصصة في إدارة الأصول والاستثمار</li>
-      </ul>
-
+      <!-- BROKERS_PLACEHOLDER -->
+      
       <h3>معايير اختيار شركة التداول</h3>
       
       <p>عند اختيار شركة تداول، يجب مراعاة النقاط التالية:</p>
@@ -166,8 +146,6 @@ try {
                 <li>استشر خبراء الاستثمار</li>
               </ul>
             </div>
-            
-
           </aside>
         </main>
       </>
@@ -190,6 +168,97 @@ try {
 </BaseLayout>
 
 <style>
+  /* All your existing styles remain the same */
+  
+  /* Additional styles for the dynamic broker section */
+  .brokers-section {
+    margin: 3rem 0;
+    padding: 2rem 0;
+    background: var(--bg-secondary);
+    border-radius: 1rem;
+  }
+
+  .companies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+  
+  .company-card {
+    background: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--border-color);
+  }
+  
+  .company-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  }
+
+  .company-placeholder {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+  
+  .placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .placeholder-content svg {
+    opacity: 0.9;
+  }
+  
+  .placeholder-content span {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .company-content {
+    padding: 1.5rem;
+  }
+  
+  .company-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+  }
+  
+  .company-content p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .company-features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .feature {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
   /* Loading and Error States */
   .loading-state, .error-state {
     display: flex;
@@ -452,135 +521,6 @@ try {
     font-weight: bold;
   }
 
-  .useful-links {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .useful-link {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: var(--bg-secondary);
-    border-radius: 0.5rem;
-    text-decoration: none;
-    color: var(--text-primary);
-    font-weight: 500;
-    transition: all 0.2s;
-    border: 1px solid transparent;
-  }
-
-  .useful-link:hover {
-    background: var(--primary-color);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-  }
-
-  /* Companies Grid */
-  .companies-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 3rem;
-  }
-  
-  .company-card {
-    background: white;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: 1px solid var(--border-color);
-  }
-  
-  .company-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-  }
-
-  .company-placeholder {
-    width: 100%;
-    height: 180px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-  }
-  
-  .placeholder-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  
-  .placeholder-content svg {
-    opacity: 0.9;
-  }
-  
-  .placeholder-content span {
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .company-content {
-    padding: 1.5rem;
-  }
-  
-  .company-content h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: var(--text-primary);
-  }
-  
-  .company-content p {
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-    line-height: 1.6;
-  }
-
-  .company-features {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .feature {
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  /* Important Note */
-  .important-note {
-    background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
-    padding: 2rem;
-    border-radius: 1rem;
-    margin-top: 3rem;
-    border: 1px solid #d97706;
-  }
-
-  .important-note h3 {
-    color: #92400e;
-    margin-bottom: 1rem;
-    font-size: 1.25rem;
-  }
-
-  .important-note p {
-    color: #78350f;
-    line-height: 1.7;
-  }
-
   /* Responsive */
   @media (max-width: 1024px) {
     .content-main {
@@ -618,6 +558,11 @@ try {
     
     .sidebar-card {
       padding: 1.5rem;
+    }
+
+    .companies-grid {
+      grid-template-columns: 1fr;
+      padding: 0 1rem;
     }
   }
   
