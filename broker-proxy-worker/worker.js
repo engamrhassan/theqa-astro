@@ -8,7 +8,56 @@ export default {
       // Parse the request URL
       const url = new URL(request.url);
       
-      // Only process the broker page (Arabic URL)
+      // Check if this is a direct worker access for testing
+      if (url.hostname.includes('workers.dev')) {
+        // For direct worker testing, always process the request
+        console.log('Direct worker access - processing request');
+        
+        // If no specific path, fetch the broker page from your Pages site
+        if (url.pathname === '/' || url.pathname.includes('شركات-تداول-مرخصة-في-السعودية')) {
+          const targetUrl = 'https://theqa-astro.pages.dev/شركات-تداول-مرخصة-في-السعودية/';
+          const originalResponse = await fetch(targetUrl);
+          
+          if (!originalResponse.ok) {
+            return new Response(`Error fetching page: ${originalResponse.status}`, { status: originalResponse.status });
+          }
+
+          // Get the HTML content
+          let html = await originalResponse.text();
+
+          // Fetch broker data based on country code from D1 database
+          const brokerData = await getBrokersForCountry(env.DB, countryCode);
+          
+          // Inject the broker data into the HTML
+          html = injectBrokerData(html, brokerData);
+          
+          // Set the country for the helper function
+          globalThis.currentUserCountry = countryCode;
+
+          // Return modified response
+          return new Response(html, {
+            status: 200,
+            headers: {
+              'Content-Type': 'text/html; charset=utf-8',
+              'X-Country-Code': countryCode,
+              'X-Cache-Status': 'DIRECT-WORKER',
+              'X-Broker-Count': brokerData.length.toString()
+            }
+          });
+        } else {
+          // For other paths on direct worker, show info
+          return new Response(`
+            <h1>Broker Proxy Worker - Test Mode</h1>
+            <p>Worker is running! Your country: ${countryCode}</p>
+            <p>Test the broker page: <a href="/شركات-تداول-مرخصة-في-السعودية">شركات التداول</a></p>
+            <p>Or visit: <a href="https://theqa-astro.pages.dev/شركات-تداول-مرخصة-في-السعودية/">Your actual site</a></p>
+          `, {
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          });
+        }
+      }
+      
+      // Only process the broker page (Arabic URL) for proxied requests
       if (!url.pathname.includes('شركات-تداول-مرخصة-في-السعودية')) {
         // For other pages, just pass through to origin
         return fetch(request);
