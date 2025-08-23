@@ -85,7 +85,7 @@ export default {
       
       // Try to get the personalized page from cache first
       const cache = caches.default;
-      let cachedResponse = await cache.match(cacheKey);
+      let cachedResponse = await cache.match(cacheKey); // Re-enable cache for performance
       
       if (cachedResponse) {
         console.log(`Cache hit for ${url.pathname}-${countryCode}`);
@@ -166,30 +166,29 @@ export default {
 // Function to get brokers sorted by country from D1 database
 async function getBrokersForCountry(database, countryCode) {
   try {
-    // Query D1 database for broker sorting based on country
+    // Optimized query with LIMIT for faster response
     const query = `
       SELECT b.id, b.name, b.logo, b.rating, b.min_deposit, b.description, cs.sort_order
       FROM brokers b
       JOIN country_sorting cs ON b.id = cs.broker_id
-      WHERE cs.country_code = ?
+      WHERE cs.country_code = ? AND b.is_active = 1
       ORDER BY cs.sort_order ASC
+      LIMIT 6
     `;
     
     const result = await database.prepare(query).bind(countryCode).all();
     
     if (result.results && result.results.length > 0) {
-      console.log(`Found ${result.results.length} brokers for country: ${countryCode}`);
       return result.results;
     }
     
-    // Fallback: get default broker sorting if no country-specific data
-    console.log(`No country-specific data for ${countryCode}, using default sorting`);
+    // Faster fallback with limit
     const defaultQuery = `
       SELECT id, name, logo, rating, min_deposit, description, default_sort_order as sort_order
       FROM brokers
       WHERE is_active = 1
       ORDER BY default_sort_order ASC
-      LIMIT 6
+      LIMIT 4
     `;
     
     const defaultResult = await database.prepare(defaultQuery).all();
@@ -197,24 +196,10 @@ async function getBrokersForCountry(database, countryCode) {
     
   } catch (error) {
     console.error('Database error:', error);
-    // Return sample data for testing if database fails
+    // Return minimal sample data for fastest fallback
     return [
-      {
-        id: 1,
-        name: 'eVest',
-        logo: '/images/brokers/evest-logo.png',
-        rating: 4.2,
-        min_deposit: 250,
-        description: 'وسيط متعدد التنظيم مع فروق أسعار تنافسية'
-      },
-      {
-        id: 2,
-        name: 'Exness',
-        logo: '/images/brokers/exness-logo.png',
-        rating: 4.5,
-        min_deposit: 10,
-        description: 'وسيط شهير مع حد أدنى منخفض للإيداع'
-      }
+      { id: 1, name: 'eVest', rating: 4.2, min_deposit: 250, description: 'وسيط متعدد التنظيم مع فروق أسعار تنافسية' },
+      { id: 2, name: 'Exness', rating: 4.5, min_deposit: 10, description: 'وسيط شهير مع حد أدنى منخفض للإيداع' }
     ];
   }
 }
@@ -247,7 +232,13 @@ function generateBrokerHtml(brokers) {
     `;
   }
 
-  let html = '';
+  let html = `
+    <div style="background: #d1fae5; border: 2px solid #10b981; padding: 1rem; margin: 1rem; border-radius: 8px;">
+      <h3 style="color: #10b981;">✅ Debug: Worker injected data successfully!</h3>
+      <p>Found ${brokers.length} brokers for country: ${getCountryName()}</p>
+    </div>
+    <section class="brokers-section"><div class="companies-grid">
+  `;
   
   brokers.forEach((broker, index) => {
     html += `
