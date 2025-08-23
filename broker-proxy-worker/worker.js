@@ -85,7 +85,14 @@ export default {
       
       // Try to get the personalized page from cache first
       const cache = caches.default;
-      let cachedResponse = await cache.match(cacheKey); // Re-enable cache for performance
+      
+      // Check for cache bypass parameter for testing
+      const bypassCache = url.searchParams.has('nocache') || url.searchParams.has('debug');
+      
+      let cachedResponse = null;
+      if (!bypassCache) {
+        cachedResponse = await cache.match(cacheKey); // Re-enable cache for performance
+      }
       
       if (cachedResponse) {
         console.log(`Cache hit for ${url.pathname}-${countryCode}`);
@@ -137,10 +144,11 @@ export default {
         }
       });
 
-      // Cache the personalized response for 1 hour
+      // Cache the personalized response for 1 hour (shorter for testing)
       const responseToCache = modifiedResponse.clone();
       const cacheHeaders = Object.fromEntries(responseToCache.headers.entries());
-      cacheHeaders['Cache-Control'] = 'public, max-age=3600';
+      cacheHeaders['Cache-Control'] = 'public, max-age=60'; // Very short cache for testing
+      cacheHeaders['Cache-Tag'] = `country-${countryCode}`; // Add cache tag for selective purging
       
       const cacheResponse = new Response(responseToCache.body, {
         status: responseToCache.status,
