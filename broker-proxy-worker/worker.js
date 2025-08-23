@@ -6,13 +6,10 @@ export default {
       const countryCode = request.cf?.country || 'US';
       const url = new URL(request.url);
       
-      // Only process the broker page (Arabic URL)
-      if (!url.pathname.includes('شركات-تداول-مرخصة-في-السعودية') && 
-          !url.pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') &&
-          !decodeURIComponent(url.pathname).includes('شركات-تداول-مرخصة-في-السعودية')) {
-        // For other pages, just pass through to origin
-        return fetch(request);
-      }
+      // Fast path: check hardcoded routes first (no DB query)
+      const isKnownBrokerRoute = url.pathname.includes('شركات-تداول-مرخصة-في-السعودية') || 
+                                url.pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') ||
+                                decodeURIComponent(url.pathname).includes('شركات-تداول-مرخصة-في-السعودية');
 
       // Create country-specific cache key
       const cacheKey = new Request(`${url.origin}${url.pathname}-${countryCode}`);
@@ -38,6 +35,15 @@ export default {
             'X-Country-Code': countryCode
           }
         });
+      }
+
+      // Only check dynamic routes if not cached and not a known route
+      if (!isKnownBrokerRoute) {
+        const shouldProcessRoute = await checkDynamicRoute(env.DB, url.pathname);
+        if (!shouldProcessRoute) {
+          // For other pages, just pass through to origin
+          return fetch(request);
+        }
       }
 
       // Fetch original page
@@ -168,7 +174,7 @@ function generateBrokerHtml(brokers) {
           <div class="company-features">
             <div class="feature">الحد الأدنى للإيداع: ${broker.min_deposit}</div>
             <div class="feature">التقييم: ${'★'.repeat(Math.floor(broker.rating))} (${broker.rating})</div>
-            <div class="feature">ترتيب: #${index + 1} في ${getCountryName()}</div>
+            <div class="feature">الترتيب: #${index + 1}</div>
           </div>
         </div>
       </article>
@@ -179,17 +185,29 @@ function generateBrokerHtml(brokers) {
   return html;
 }
 
-// Get country name in Arabic
-function getCountryName() {
-  const countryNames = {
-    'SA': 'السعودية', 'AE': 'الإمارات', 'KW': 'الكويت', 'BH': 'البحرين',
-    'QA': 'قطر', 'OM': 'عمان', 'JO': 'الأردن', 'LB': 'لبنان', 'EG': 'مصر',
-    'US': 'الولايات المتحدة', 'GB': 'المملكة المتحدة', 'DE': 'ألمانيا',
-    'FR': 'فرنسا', 'IT': 'إيطاليا', 'ES': 'إسبانيا', 'CA': 'كندا',
-    'AU': 'أستراليا', 'JP': 'اليابان', 'KR': 'كوريا الجنوبية', 'CN': 'الصين',
-    'IN': 'الهند', 'BR': 'البرازيل', 'MX': 'المكسيك', 'TR': 'تركيا', 'ZA': 'جنوب أفريقيا'
-  };
-  
-  const userCountry = globalThis.currentUserCountry || 'SA';
-  return countryNames[userCountry] || 'منطقتك';
+// Check if route should get dynamic broker data
+async function checkDynamicRoute(database, pathname) {
+  try {
+    const decodedPath = decodeURIComponent(pathname);
+    
+    const query = `
+      SELECT COUNT(*) as count
+      FROM dynamic_routes
+      WHERE is_active = 1 AND (
+        ? LIKE '%' || route_pattern || '%' OR
+        route_pattern LIKE '%' || ? || '%'
+      )
+    `;
+    
+    const result = await database.prepare(query).bind(decodedPath, decodedPath).first();
+    return result.count > 0;
+    
+  } catch (error) {
+    console.error('Route check error:', error);
+    // Fallback to original hardcoded check
+    return pathname.includes('شركات-تداول-مرخصة-في-السعودية') || 
+           pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') ||
+           decodeURIComponent(pathname).includes('شركات-تداول-مرخصة-في-السعودية');
+  }
 }
+

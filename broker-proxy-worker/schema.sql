@@ -30,9 +30,18 @@ CREATE TABLE country_sorting (
     UNIQUE(country_code, broker_id)
 );
 
+-- Table for dynamic routes that should get broker data
+CREATE TABLE dynamic_routes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    route_pattern TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Index for faster queries
 CREATE INDEX idx_country_sorting ON country_sorting(country_code, sort_order);
 CREATE INDEX idx_brokers_active ON brokers(is_active, default_sort_order);
+CREATE INDEX idx_dynamic_routes ON dynamic_routes(is_active);
 
 -- Sample broker data
 INSERT INTO brokers (name, slug, logo, rating, min_deposit, description, website_url, default_sort_order) VALUES
@@ -69,6 +78,13 @@ INSERT INTO country_sorting (country_code, broker_id, sort_order, is_featured) V
 ('SG', 1, 2, 1), -- eVest second
 ('SG', 3, 3, 0), -- AvaTrade third
 ('SG', 4, 4, 0); -- XTB last
+
+-- Sample dynamic routes
+INSERT INTO dynamic_routes (route_pattern) VALUES
+('شركات-تداول-مرخصة-في-السعودية'),
+('brokers'),
+('trading-companies'),
+('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA');
 
 -- Query examples for testing:
 
