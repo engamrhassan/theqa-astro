@@ -26,7 +26,7 @@ export default {
             url.pathname.includes('شركات-تداول-مرخصة-في-السعودية') ||
             url.pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') ||
             decodeURIComponent(url.pathname).includes('شركات-تداول-مرخصة-في-السعودية')) {
-          const targetUrl = 'https://theqa-astro-test.pages.dev/شركات-تداول-مرخصة-في-السعودية/';
+          const targetUrl = 'https://astro.theqalink.com//شركات-تداول-مرخصة-في-السعودية/';
           console.log('Fetching from:', targetUrl);
           
           const originalResponse = await fetch(targetUrl);
@@ -68,7 +68,7 @@ export default {
             <p>Worker is running! Your country: ${countryCode}</p>
             <p>Current path: ${url.pathname}</p>
             <p>Test the broker page: <a href="/شركات-تداول-مرخصة-في-السعودية">شركات التداول</a></p>
-            <p>Or visit: <a href="https://theqa-astro-test.pages.dev/شركات-تداول-مرخصة-في-السعودية/">Your actual site</a></p>
+            <p>Or visit: <a href="https://astro.theqalink.com//شركات-تداول-مرخصة-في-السعودية/">Your actual site</a></p>
           `, {
             headers: { 'Content-Type': 'text/html; charset=utf-8' }
           });

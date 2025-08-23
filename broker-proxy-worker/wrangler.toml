@@ -2,6 +2,10 @@ name = "broker-proxy-worker"
 main = "worker.js"
 compatibility_date = "2025-08-22"
 
+routes = [
+  "astro.theqalink.com/شركات-تداول-مرخصة-في-السعودية*"
+]
+
 [[d1_databases]]
 binding = "DB"
 database_name = "broker-sorting-db"
