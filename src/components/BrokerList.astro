@@ -30,9 +30,6 @@ const {
       <div class="brokers-placeholder">
         <!-- BROKERS_PLACEHOLDER -->
                  <div class="default-brokers">
-           <div class="loading-state">
-             <div class="loading-spinner"></div>
-           </div>
           
           <!-- Fallback broker cards (shown if Worker doesn't work) -->
           <div class="fallback-brokers">
@@ -135,35 +132,7 @@ const {
     position: relative;
   }
 
-  /* Loading State */
-  .loading-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 4rem 2rem;
-    text-align: center;
-  }
-
-  .loading-spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid rgba(37, 99, 235, 0.1);
-    border-top: 4px solid var(--primary-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1.5rem;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  .loading-state p {
-    color: var(--text-secondary);
-    font-size: 1.125rem;
-  }
+  
 
   /* Fallback Brokers */
   .fallback-brokers {
@@ -412,19 +381,17 @@ const {
 </style>
 
 <script>
-  // Show fallback brokers if loading takes too long
-  setTimeout(() => {
-    const loadingState = document.querySelector('.loading-state');
-    const fallbackBrokers = document.querySelector('.fallback-brokers');
-    
-    if (loadingState && fallbackBrokers) {
-      // Check if dynamic content was loaded
-      const dynamicContent = document.querySelector('.companies-grid');
-      
-      if (!dynamicContent) {
-        loadingState.style.display = 'none';
-        fallbackBrokers.style.display = 'grid';
-      }
-    }
-  }, 3000); // Show fallback after 3 seconds
+     // Show fallback brokers if dynamic content doesn't load
+   setTimeout(() => {
+     const fallbackBrokers = document.querySelector('.fallback-brokers');
+     
+     if (fallbackBrokers) {
+       // Check if dynamic content was loaded
+       const dynamicContent = document.querySelector('.companies-grid');
+       
+       if (!dynamicContent) {
+         fallbackBrokers.style.display = 'grid';
+       }
+     }
+   }, 3000); // Show fallback after 3 seconds
 </script>

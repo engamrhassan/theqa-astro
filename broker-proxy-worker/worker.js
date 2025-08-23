@@ -8,15 +8,12 @@ export default {
       // Parse the request URL
       const url = new URL(request.url);
       
-      // Check if this is a request to the custom domain that should be proxied
-      if (url.hostname === 'astro.theqalink.com') {
-        // This is a request from the actual site - process it
-        console.log('Custom domain request - processing');
-      }
+      console.log('Custom domain request - processing');
+      console.log('Request path:', url.pathname);
+      console.log('User country:', countryCode);
       
       // Check if this is a direct worker access for testing
       if (url.hostname.includes('workers.dev')) {
-        // For direct worker testing, always process the request
         console.log('Direct worker access - processing request');
         console.log('Request path:', url.pathname);
         console.log('User country:', countryCode);
@@ -250,13 +247,7 @@ function generateBrokerHtml(brokers) {
     `;
   }
 
-  let html = `
-    <div style="background: #d1fae5; border: 2px solid #10b981; padding: 1rem; margin: 1rem; border-radius: 8px;">
-      <h3 style="color: #10b981;">✅ Debug: Worker injected data successfully!</h3>
-      <p>Found ${brokers.length} brokers for country: ${getCountryName()}</p>
-    </div>
-    <section class="brokers-section"><div class="companies-grid">
-  `;
+  let html = '';
   
   brokers.forEach((broker, index) => {
     html += `
