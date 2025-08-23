@@ -8,10 +8,10 @@ export default {
       // Parse the request URL
       const url = new URL(request.url);
       
-      // Check if this is a request to the Pages domain that should be proxied
-      if (url.hostname === 'theqa-astro.pages.dev') {
-        // This is a request from the actual Pages site - process it
-        console.log('Pages domain request - processing');
+      // Check if this is a request to the custom domain that should be proxied
+      if (url.hostname === 'astro.theqalink.com') {
+        // This is a request from the actual site - process it
+        console.log('Custom domain request - processing');
       }
       
       // Check if this is a direct worker access for testing
@@ -26,7 +26,7 @@ export default {
             url.pathname.includes('شركات-تداول-مرخصة-في-السعودية') ||
             url.pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') ||
             decodeURIComponent(url.pathname).includes('شركات-تداول-مرخصة-في-السعودية')) {
-          const targetUrl = 'https://astro.theqalink.com//شركات-تداول-مرخصة-في-السعودية/';
+          const targetUrl = 'https://astro.theqalink.com/شركات-تداول-مرخصة-في-السعودية/';
           console.log('Fetching from:', targetUrl);
           
           const originalResponse = await fetch(targetUrl);
@@ -68,7 +68,7 @@ export default {
             <p>Worker is running! Your country: ${countryCode}</p>
             <p>Current path: ${url.pathname}</p>
             <p>Test the broker page: <a href="/شركات-تداول-مرخصة-في-السعودية">شركات التداول</a></p>
-            <p>Or visit: <a href="https://astro.theqalink.com//شركات-تداول-مرخصة-في-السعودية/">Your actual site</a></p>
+            <p>Or visit: <a href="https://astro.theqalink.com/شركات-تداول-مرخصة-في-السعودية/">Your actual site</a></p>
           `, {
             headers: { 'Content-Type': 'text/html; charset=utf-8' }
           });
@@ -83,23 +83,29 @@ export default {
         return fetch(request);
       }
 
-      // Create a cache key that includes the country code
-      const cacheKey = `${url.pathname}-${countryCode}`;
+      // Create a cache key that includes the country code (fix URL encoding)
+      const cacheKey = new Request(`${url.origin}${url.pathname}-${countryCode}`);
       
       // Try to get the personalized page from cache first
       const cache = caches.default;
       let cachedResponse = await cache.match(cacheKey);
       
       if (cachedResponse) {
-        console.log(`Cache hit for ${cacheKey}`);
-        // Add cache status header
-        const response = new Response(cachedResponse.body, cachedResponse);
-        response.headers.set('X-Cache-Status', 'HIT');
-        response.headers.set('X-Country-Code', countryCode);
-        return response;
+        console.log(`Cache hit for ${url.pathname}-${countryCode}`);
+        // Create new response to avoid immutable headers issue
+        const responseBody = await cachedResponse.text();
+        return new Response(responseBody, {
+          status: cachedResponse.status,
+          statusText: cachedResponse.statusText,
+          headers: {
+            ...Object.fromEntries(cachedResponse.headers.entries()),
+            'X-Cache-Status': 'HIT',
+            'X-Country-Code': countryCode
+          }
+        });
       }
 
-      console.log(`Cache miss for ${cacheKey}`);
+      console.log(`Cache miss for ${url.pathname}-${countryCode}`);
 
       // Fetch the original page from your Astro Pages site
       const originalResponse = await fetch(request);
@@ -120,12 +126,13 @@ export default {
       // Set the country for the helper function
       globalThis.currentUserCountry = countryCode;
 
-      // Create new response with modified HTML
+      // Create new response with modified HTML (fix immutable headers)
+      const originalHeaders = Object.fromEntries(originalResponse.headers.entries());
       const modifiedResponse = new Response(html, {
         status: originalResponse.status,
         statusText: originalResponse.statusText,
         headers: {
-          ...originalResponse.headers,
+          ...originalHeaders,
           'Content-Type': 'text/html; charset=utf-8',
           'X-Country-Code': countryCode,
           'X-Cache-Status': 'MISS',
@@ -135,10 +142,16 @@ export default {
 
       // Cache the personalized response for 1 hour
       const responseToCache = modifiedResponse.clone();
-      responseToCache.headers.set('Cache-Control', 'public, max-age=3600');
+      const cacheHeaders = Object.fromEntries(responseToCache.headers.entries());
+      cacheHeaders['Cache-Control'] = 'public, max-age=3600';
+      
+      const cacheResponse = new Response(responseToCache.body, {
+        status: responseToCache.status,
+        headers: cacheHeaders
+      });
       
       // Store in cache with country-specific key
-      ctx.waitUntil(cache.put(cacheKey, responseToCache));
+      ctx.waitUntil(cache.put(cacheKey, cacheResponse));
 
       return modifiedResponse;
 
@@ -307,6 +320,6 @@ function getCountryName() {
   };
   
   // This will be set by the worker based on the user's country
-  const userCountry = globalThis.currentUserCountry ;
+  const userCountry = globalThis.currentUserCountry || 'SA';
   return countryNames[userCountry] || 'منطقتك';
 }
