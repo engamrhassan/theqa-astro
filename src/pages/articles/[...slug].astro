@@ -96,7 +96,8 @@ const structuredData = {
         <img 
           src={article.data.image.src} 
           alt={article.data.imageAlt}
-          loading="eager"
+          loading="lazy"
+          decoding="async"
         />
       </div>
 
