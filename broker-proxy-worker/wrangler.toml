@@ -3,7 +3,7 @@ main = "worker.js"
 compatibility_date = "2025-08-22"
 
 routes = [
-  "astro.theqalink.com/شركات-تداول-مرخصة-في-السعودية*"
+  "astro.theqalink.com/*"
 ]
 
 [[d1_databases]]
