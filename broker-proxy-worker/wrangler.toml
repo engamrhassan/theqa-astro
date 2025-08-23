@@ -2,6 +2,9 @@ name = "broker-proxy-worker"
 main = "worker.js"
 compatibility_date = "2025-08-22"
 
+[vars]
+CACHE_VERSION = "4"
+
 routes = [
   "astro.theqalink.com/*"
 ]
