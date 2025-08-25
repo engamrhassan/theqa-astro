@@ -8,16 +8,19 @@ const API_CONFIG = {
   headers: {
     "Accept": "application/json",
     "X-API-Hash": "b3da624e147174b654c4c9358ac40c4ca716cb9db56b0da0e2f8200553922ac0",
-    "Authorization": "Basic YWRtaW46U0F3S3EzQUg5bVZxVg=="
+    "Authorization": "Basic YWRtaW46U0F3S3EzQUg5bVZxVg==",
+    "Cache-Control": "no-cache"
   }
 };
 
-// Fetch page data
+// Fetch page data with cache busting
 let pageData = null;
 let error = null;
 
 try {
-  const response = await fetch(API_CONFIG.url, {
+  // Add timestamp to bust any intermediate caches
+  const cacheBuster = `?t=${Date.now()}`;
+  const response = await fetch(API_CONFIG.url + cacheBuster, {
     method: "GET",
     headers: API_CONFIG.headers,
     redirect: "follow"
@@ -136,6 +139,25 @@ try {
     padding: 2rem 0;
     background: var(--bg-secondary);
     border-radius: 1rem;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 0 2rem;
+  }
+
+  .section-header h2 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+  }
+
+  .section-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin: 0;
   }
 
   .companies-grid {

@@ -59,7 +59,7 @@ export default {
 
       console.log(`Cache MISS for ${countryCode}: ${url.pathname}`);
 
-      // Fetch original page
+      // Fetch original page (Astro handles the API call)
       const originalResponse = await fetch(request);
       if (!originalResponse.ok) {
         return originalResponse;
