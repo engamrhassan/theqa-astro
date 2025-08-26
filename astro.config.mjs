@@ -9,7 +9,7 @@ export default defineConfig({
       prefixDefaultLocale: false
     }
   },
-  output: 'static',
+  output: 'static', // Keep static for simplicity
   build: {
     inlineStylesheets: 'auto'
   },

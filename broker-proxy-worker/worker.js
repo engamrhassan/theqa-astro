@@ -59,7 +59,7 @@ export default {
 
       console.log(`Cache MISS for ${countryCode}: ${url.pathname}`);
 
-      // Fetch original page
+      // Fetch original page (Astro handles the API call)
       const originalResponse = await fetch(request);
       if (!originalResponse.ok) {
         return originalResponse;
@@ -68,10 +68,7 @@ export default {
       // Get HTML and inject broker data
       let html = await originalResponse.text();
       const brokerData = await getBrokersForCountry(env.DB, countryCode);
-      html = injectBrokerData(html, brokerData);
-      
-      // Set country for helper function
-      globalThis.currentUserCountry = countryCode;
+      html = injectBrokerData(html, brokerData, countryCode);
 
       // Create response with injected data
       const modifiedResponse = new Response(html, {
@@ -193,7 +190,7 @@ function getHardcodedBrokers() {
 }
 
 // Inject broker data into HTML with improved placeholder detection
-function injectBrokerData(html, brokers) {
+function injectBrokerData(html, brokers, countryCode) {
   const brokerPlaceholder = '<!-- BROKERS_PLACEHOLDER -->';
   
   if (!html.includes(brokerPlaceholder)) {
@@ -201,12 +198,12 @@ function injectBrokerData(html, brokers) {
     return html;
   }
 
-  const brokerHtml = generateBrokerHtml(brokers);
+  const brokerHtml = generateBrokerHtml(brokers, countryCode);
   return html.replace(brokerPlaceholder, brokerHtml);
 }
 
 // Generate broker HTML with enhanced styling
-function generateBrokerHtml(brokers) {
+function generateBrokerHtml(brokers, countryCode) {
   if (!brokers || brokers.length === 0) {
     return `
       <div style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 0.5rem;">
@@ -224,23 +221,13 @@ function generateBrokerHtml(brokers) {
     
     html += `
       <article class="company-card" data-position="${index + 1}" data-broker-id="${broker.id}">
-        <div class="company-placeholder">
-          <div class="placeholder-content">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <span>${broker.name}</span>
-          </div>
-        </div>
         <div class="company-content">
           <h3>${broker.name}</h3>
           <p>${description}</p>
           <div class="company-features">
             <div class="feature">الحد الأدنى للإيداع: $${minDeposit}</div>
             <div class="feature">التقييم: ${'★'.repeat(Math.floor(rating))} (${rating})</div>
-            <div class="feature">الترتيب: #${index + 1} في ${getCountryName()}</div>
+            <div class="feature">الترتيب: #${index + 1} في ${getCountryName(countryCode)}</div>
           </div>
         </div>
       </article>
@@ -295,7 +282,7 @@ async function checkDynamicRoute(database, pathname) {
 }
 
 // Helper function to get country name in Arabic
-function getCountryName() {
+function getCountryName(countryCode = 'SA') {
   const countryNames = {
     'SA': 'السعودية',
     'AE': 'الإمارات', 
@@ -326,6 +313,5 @@ function getCountryName() {
     'ZA': 'جنوب أفريقيا'
   };
   
-  const userCountry = globalThis.currentUserCountry || 'SA';
-  return countryNames[userCountry] || 'منطقتك';
+  return countryNames[countryCode] || 'منطقتك';
 }
