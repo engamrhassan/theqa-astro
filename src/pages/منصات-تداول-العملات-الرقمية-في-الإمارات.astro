@@ -1,0 +1,577 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BrokerList from '../components/BrokerList.astro';
+
+// API configuration
+const API_CONFIG = {
+  url: "https://theqalink.com/api/v1/page/منصات-تداول-العملات-الرقمية-في-الإمارات",
+  headers: {
+    "Accept": "application/json",
+    "X-API-Hash": "b3da624e147174b654c4c9358ac40c4ca716cb9db56b0da0e2f8200553922ac0",
+    "Authorization": "Basic YWRtaW46U0F3S3EzQUg5bVZxVg==",
+    "Cache-Control": "no-cache"
+  }
+};
+
+// Fetch page data with cache busting
+let pageData = null;
+let error = null;
+
+try {
+  // Add timestamp to bust any intermediate caches
+  const cacheBuster = `?t=${Date.now()}`;
+  const response = await fetch(API_CONFIG.url + cacheBuster, {
+    method: "GET",
+    headers: API_CONFIG.headers,
+    redirect: "follow"
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  
+
+  
+  // Extract only name and content from the API response
+  const extractedTitle = data.data?.name || '';
+  const extractedContent = data.data?.content || '';
+  
+  pageData = {
+    title: extractedTitle,
+    content: extractedContent,
+    excerpt: '',
+    meta_description: '',
+    updated_at: new Date().toISOString()
+  };
+
+} catch (err) {
+  console.error('Error fetching page data:', err);
+  error = err instanceof Error ? err.message : 'حدث خطأ في تحميل البيانات';
+  pageData = null;
+}
+---
+
+<BaseLayout 
+  title={pageData?.title || "منصات التداول المرخصة في الإمارات - المدونة العربية"}
+  description={pageData?.meta_description || "دليل شامل لأهم منصات التداول المرخصة والموثوقة في الإمارات"}
+>
+  <div class="container">
+    {pageData && (
+      <>
+        <!-- Dynamic Page Header -->
+        <header class="page-header">
+          <div class="header-content">
+            <div class="badge">محتوى مُحدث</div>
+            <h1 class="fade-in">{pageData.title}</h1>
+            {pageData.excerpt && (
+              <p class="subtitle fade-in-delay">{pageData.excerpt}</p>
+            )}
+            <div class="header-meta fade-in-delay-2">
+              <span class="meta-item">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.52 22 12 17.48 2 12 2ZM13 17H11V11H13V17ZM13 9H11V7H13V9Z" fill="currentColor"/>
+                </svg>
+                محتوى موثوق
+              </span>
+              {pageData.updated_at && (
+                <span class="meta-item">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 11H7V13H9V11ZM13 11H11V13H13V11ZM17 11H15V13H17V11ZM19 3H18V1H16V3H8V1H6V3H5C3.89 3 3.01 3.9 3.01 5L3 19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V8H19V19Z" fill="currentColor"/>
+                  </svg>
+                  آخر تحديث: {new Date(pageData.updated_at).toLocaleDateString('ar-SA')}
+                </span>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <!-- Dynamic Broker List Component -->
+        <BrokerList 
+          title="أفضل شركات التداول في منطقتك"
+          subtitle="شركات مرخصة وموثوقة مرتبة حسب موقعك الجغرافي"
+        />
+
+        <!-- Dynamic Content Section -->
+        <main class="content-main">
+          <article class="content-article">
+            <div class="content-body" set:html={pageData.content}></div>
+          </article>
+          
+          <aside class="content-sidebar">
+            <div class="sidebar-card">
+              <h3>معلومات مهمة</h3>
+              <ul class="info-list">
+                <li>تحقق من الترخيص الرسمي</li>
+                <li>اقرأ الشروط والأحكام</li>
+                <li>ابدأ بحساب تجريبي</li>
+                <li>استشر خبراء الاستثمار</li>
+              </ul>
+            </div>
+          </aside>
+        </main>
+      </>
+    )}
+    
+    {!pageData && (
+      <div class="error-state">
+        <div class="error-content">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.52 22 12 17.48 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
+          </svg>
+          <h2>خطأ في تحميل المحتوى</h2>
+          <p>عذراً، لم نتمكن من تحميل محتوى الصفحة. يرجى المحاولة مرة أخرى لاحقاً.</p>
+          {error && <p style="margin-top: 1rem; font-size: 0.875rem; opacity: 0.7;">تفاصيل الخطأ: {error}</p>}
+          <button class="retry-button" onclick="window.location.reload()">إعادة المحاولة</button>
+        </div>
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  /* All your existing styles remain the same */
+  
+  /* Additional styles for the dynamic broker section */
+  .brokers-section {
+    margin: 3rem 0;
+    padding: 2rem 0;
+    background: var(--bg-secondary);
+    border-radius: 1rem;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 0 2rem;
+  }
+
+  .section-header h2 {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+  }
+
+  .section-header p {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin: 0;
+  }
+
+  .companies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+  
+  .company-card {
+    background: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--border-color);
+  }
+  
+  .company-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+  }
+
+  .company-placeholder {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+  
+  .placeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .placeholder-content svg {
+    opacity: 0.9;
+  }
+  
+  .placeholder-content span {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .company-content {
+    padding: 1.5rem;
+  }
+  
+  .company-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+  }
+  
+  .company-content p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .company-features {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .feature {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  /* Loading and Error States */
+  .loading-state, .error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+  }
+
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .error-content {
+    max-width: 400px;
+    color: #dc2626;
+  }
+
+  .error-content svg {
+    margin-bottom: 1rem;
+    color: #dc2626;
+  }
+
+  .retry-button {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background-color 0.2s;
+  }
+
+  .retry-button:hover {
+    background: var(--secondary-color);
+  }
+
+  /* Modern Page Header */
+  .page-header {
+    text-align: center;
+    margin-bottom: 4rem;
+    padding: 3rem 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.1;
+  }
+
+  .header-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .page-header h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    opacity: 0.9;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+  }
+
+  .header-meta {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    opacity: 0.8;
+  }
+
+  /* Animations */
+  .fade-in {
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  .fade-in-delay {
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+  }
+
+  .fade-in-delay-2 {
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Modern Content Layout */
+  .content-main {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 3rem;
+    margin-bottom: 3rem;
+  }
+
+  .content-article {
+    background: white;
+    border-radius: 1rem;
+    padding: 3rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+  }
+
+  .content-body {
+    color: var(--text-primary);
+    line-height: 1.8;
+    font-size: 1.1rem;
+  }
+
+  .content-body h1, .content-body h2, .content-body h3 {
+    color: var(--primary-color);
+    margin: 2rem 0 1rem;
+    font-weight: 700;
+  }
+
+  .content-body h1 { font-size: 2rem; }
+  .content-body h2 { font-size: 1.75rem; }
+  .content-body h3 { font-size: 1.5rem; }
+
+  .content-body p {
+    margin-bottom: 1.5rem;
+  }
+
+  .content-body ul, .content-body ol {
+    margin: 1.5rem 0;
+    padding-right: 2rem;
+  }
+
+  .content-body li {
+    margin-bottom: 0.5rem;
+  }
+
+  .content-body a {
+    color: var(--primary-color);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+
+  .content-body a:hover {
+    border-bottom-color: var(--primary-color);
+  }
+
+  .content-body blockquote {
+    background: var(--bg-secondary);
+    border-right: 4px solid var(--primary-color);
+    padding: 1.5rem;
+    margin: 2rem 0;
+    border-radius: 0.5rem;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  /* Sidebar */
+  .content-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .sidebar-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    position: sticky;
+    top: 2rem;
+  }
+
+  .sidebar-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  .info-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .info-list li {
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    position: relative;
+    padding-right: 2.5rem;
+  }
+
+  .info-list li::before {
+    content: '✓';
+    position: absolute;
+    right: 0.75rem;
+    color: var(--primary-color);
+    font-weight: bold;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .content-main {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    
+    .sidebar-card {
+      position: static;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      padding: 2rem 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .page-header h1 {
+      font-size: 2rem;
+    }
+
+    .header-meta {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .content-article {
+      padding: 2rem;
+    }
+
+    .content-body {
+      font-size: 1rem;
+    }
+    
+    .sidebar-card {
+      padding: 1.5rem;
+    }
+
+    .companies-grid {
+      grid-template-columns: 1fr;
+      padding: 0 1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .page-header {
+      padding: 1.5rem 0.5rem;
+    }
+    
+    .page-header h1 {
+      font-size: 1.75rem;
+    }
+
+    .content-article {
+      padding: 1.5rem;
+    }
+
+    .sidebar-card {
+      padding: 1rem;
+    }
+
+    .meta-item {
+      font-size: 0.8rem;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+    }
+  }
+</style>
