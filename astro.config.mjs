@@ -2,6 +2,7 @@ import { defineConfig } from 'astro/config';
 
 export default defineConfig({
   site: 'https://astro.theqalink.com',
+  trailingSlash: 'always',
   i18n: {
     defaultLocale: 'ar',
     locales: ['ar'],
