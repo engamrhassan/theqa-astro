@@ -6,10 +6,8 @@ export default {
       const countryCode = request.cf?.country || 'US';
       const url = new URL(request.url);
       
-      // Fast path: check hardcoded routes first (no DB query)
-      const isKnownBrokerRoute = url.pathname.includes('شركات-تداول-مرخصة-في-السعودية') || 
-                                url.pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') ||
-                                decodeURIComponent(url.pathname).includes('شركات-تداول-مرخصة-في-السعودية');
+      // Fast path: check known routes (cached from env or DB)
+      const isKnownBrokerRoute = await checkKnownRoutes(env, url.pathname);
 
       // Create country-specific cache key with version for cache busting
       const cacheVersion = env.CACHE_VERSION || '1';
@@ -90,7 +88,9 @@ export default {
         const responseToCache = modifiedResponse.clone();
         const cacheHeaders = Object.fromEntries(responseToCache.headers.entries());
         cacheHeaders['Cache-Control'] = 'public, max-age=3600, s-maxage=3600'; // 1 hour
-        cacheHeaders['Cache-Tag'] = `country-${countryCode},brokers,version-${cacheVersion}`;
+        // Extract slug from pathname for targeted cache clearing
+        const slug = url.pathname.replace(/^\/+|\/+$/g, ''); // Remove leading/trailing slashes
+        cacheHeaders['Cache-Tag'] = `country-${countryCode},brokers,content-pages,arabic-pages,slug-${slug},page-${slug},version-${cacheVersion}`;
         cacheHeaders['Vary'] = 'CF-IPCountry, User-Agent';
         
         const cacheResponse = new Response(responseToCache.body, {
@@ -314,4 +314,60 @@ function getCountryName(countryCode = 'SA') {
   };
   
   return countryNames[countryCode] || 'منطقتك';
+}
+
+// Cache for known routes (avoids repeated DB queries)
+let cachedRoutes = null;
+let routesCacheTime = 0;
+const ROUTES_CACHE_TTL = 300000; // 5 minutes
+
+// Check if route is a known broker route with caching
+async function checkKnownRoutes(env, pathname) {
+  const now = Date.now();
+  const decodedPath = decodeURIComponent(pathname);
+  
+  // Use cached routes if available and fresh
+  if (cachedRoutes && (now - routesCacheTime) < ROUTES_CACHE_TTL) {
+    return cachedRoutes.some(route => 
+      pathname.includes(route) || decodedPath.includes(route)
+    );
+  }
+  
+  try {
+    // Try to get routes from environment first (fastest)
+    if (env.BROKER_ROUTES) {
+      cachedRoutes = env.BROKER_ROUTES.split(',');
+      routesCacheTime = now;
+      return cachedRoutes.some(route => 
+        pathname.includes(route) || decodedPath.includes(route)
+      );
+    }
+    
+    // Fallback to database if no env routes
+    const query = `SELECT route_pattern FROM dynamic_routes WHERE is_active = 1`;
+    const result = await env.DB.prepare(query).all();
+    
+    if (result.results && result.results.length > 0) {
+      cachedRoutes = result.results.map(r => r.route_pattern);
+      routesCacheTime = now;
+      return cachedRoutes.some(route => 
+        pathname.includes(route) || decodedPath.includes(route)
+      );
+    }
+    
+    // Final fallback to default routes
+    cachedRoutes = ['شركات-تداول-مرخصة-في-السعودية', 'brokers', 'trading-companies'];
+    routesCacheTime = now;
+    return cachedRoutes.some(route => 
+      pathname.includes(route) || decodedPath.includes(route)
+    );
+    
+  } catch (error) {
+    console.error('Route check error:', error);
+    // Use cached routes if available, or default fallback
+    const fallbackRoutes = cachedRoutes || ['شركات-تداول-مرخصة-في-السعودية', 'brokers'];
+    return fallbackRoutes.some(route => 
+      pathname.includes(route) || decodedPath.includes(route)
+    );
+  }
 }

@@ -3,7 +3,7 @@ main = "worker.js"
 compatibility_date = "2025-08-22"
 
 [vars]
-CACHE_VERSION = "23"
+CACHE_VERSION = "24"
 
 routes = [
   "astro.theqalink.com/*"

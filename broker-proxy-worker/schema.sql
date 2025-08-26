@@ -84,7 +84,17 @@ INSERT INTO dynamic_routes (route_pattern) VALUES
 ('شركات-تداول-مرخصة-في-السعودية'),
 ('brokers'),
 ('trading-companies'),
-('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA');
+('forex-brokers'),
+('وسطاء-تداول'),
+('شركات-الفوركس'),
+('وسطاء-فوركس'),
+('شركات-وساطة'),
+('best-brokers'),
+('top-brokers'),
+('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA'), -- URL encoded Arabic
+('%D9%88%D8%B3%D8%B7%D8%A7%D8%A1'), -- URL encoded Arabic for "brokers"
+('broker-comparison'),
+('trading-platforms');
 
 -- Query examples for testing:
 
