@@ -36,6 +36,7 @@ export default {
           statusText: cachedResponse.statusText,
           headers: {
             ...Object.fromEntries(cachedResponse.headers.entries()),
+            'Cache-Tag': 'content-pages,arabic-pages,broker-pages,trading-pages',
             'X-Cache-Status': 'HIT',
             'X-Country-Code': countryCode,
             'X-Cache-Key': `${countryCode}-v${cacheVersion}`,
@@ -77,6 +78,7 @@ export default {
         headers: {
           ...Object.fromEntries(originalResponse.headers.entries()),
           'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Tag': 'content-pages,arabic-pages,broker-pages,trading-pages',
           'X-Country-Code': countryCode,
           'X-Cache-Status': 'MISS',
           'X-Broker-Count': brokerData.length.toString(),
@@ -90,7 +92,7 @@ export default {
         const responseToCache = modifiedResponse.clone();
         const cacheHeaders = Object.fromEntries(responseToCache.headers.entries());
         cacheHeaders['Cache-Control'] = 'public, max-age=3600, s-maxage=3600'; // 1 hour
-        cacheHeaders['Cache-Tag'] = `country-${countryCode},brokers,version-${cacheVersion}`;
+        cacheHeaders['Cache-Tag'] = `content-pages,arabic-pages,broker-pages,country-${countryCode},version-${cacheVersion}`;
         cacheHeaders['Vary'] = 'CF-IPCountry, User-Agent';
         
         const cacheResponse = new Response(responseToCache.body, {
