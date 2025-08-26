@@ -5,28 +5,29 @@ export default {
       // Get user's country code from Cloudflare
       const countryCode = request.cf?.country || 'US';
       const url = new URL(request.url);
-
+      
       // Fast path: check hardcoded routes first (no DB query)
-      const isKnownBrokerRoute = url.pathname.includes('شركات-تداول-مرخصة-في-السعودية') ||
-        url.pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') ||
-        decodeURIComponent(url.pathname).includes('شركات-تداول-مرخصة-في-السعودية');
+      const isKnownBrokerRoute = url.pathname.includes('شركات-تداول-مرخصة-في-السعودية') || 
+                                url.pathname.includes('%D8%B4%D8%B1%D9%83%D8%A7%D8%AA') ||
+                                decodeURIComponent(url.pathname).includes('شركات-تداول-مرخصة-في-السعودية');
 
-      // Create simple cache key that matches the URL you're purging
-      const cacheKey = new Request(`${url.origin}${url.pathname}`);
+      // Create country-specific cache key with version for cache busting
+      const cacheVersion = env.CACHE_VERSION || '1';
+      const cacheKey = new Request(`${url.origin}${url.pathname}-${countryCode}-v${cacheVersion}`);
       const cache = caches.default;
-
+      
       // Check for cache bypass parameters
-      const bypassCache = url.searchParams.has('nocache') ||
-        url.searchParams.has('debug') ||
-        url.searchParams.has('cache_bust') ||
-        request.headers.get('Cache-Control')?.includes('no-cache');
-
+      const bypassCache = url.searchParams.has('nocache') || 
+                         url.searchParams.has('debug') ||
+                         url.searchParams.has('cache_bust') ||
+                         request.headers.get('Cache-Control')?.includes('no-cache');
+      
       // Try cache first (unless bypassed)
       let cachedResponse = null;
       if (!bypassCache) {
         cachedResponse = await cache.match(cacheKey);
       }
-
+      
       if (cachedResponse) {
         console.log(`Cache HIT for ${countryCode}: ${url.pathname}`);
         const responseBody = await cachedResponse.text();
@@ -37,7 +38,7 @@ export default {
             ...Object.fromEntries(cachedResponse.headers.entries()),
             'X-Cache-Status': 'HIT',
             'X-Country-Code': countryCode,
-            'X-Cache-Key': `${url.pathname}`,
+            'X-Cache-Key': `${countryCode}-v${cacheVersion}`,
             'X-Served-At': new Date().toISOString()
           }
         });
@@ -45,12 +46,12 @@ export default {
 
       // Check if this route should be processed
       let shouldProcess = isKnownBrokerRoute;
-
+      
       // Only check dynamic routes if not a known route (saves DB query)
       if (!shouldProcess) {
         shouldProcess = await checkDynamicRoute(env.DB, url.pathname);
       }
-
+      
       if (!shouldProcess) {
         // For other pages, pass through to origin
         return fetch(request);
@@ -69,7 +70,7 @@ export default {
       const brokerData = await getBrokersForCountry(env.DB, countryCode);
       html = injectBrokerData(html, brokerData, countryCode);
 
-      // Create response with injected data and cache tags
+      // Create response with injected data
       const modifiedResponse = new Response(html, {
         status: originalResponse.status,
         statusText: originalResponse.statusText,
@@ -79,10 +80,8 @@ export default {
           'X-Country-Code': countryCode,
           'X-Cache-Status': 'MISS',
           'X-Broker-Count': brokerData.length.toString(),
-          'X-Cache-Key': `${url.pathname}`,
-          'X-Generated-At': new Date().toISOString(),
-          // Cache tags for proper cache purging
-          'Cache-Tag': `broker-page,country-${countryCode},dynamic-content`
+          'X-Cache-Key': `${countryCode}-v${cacheVersion}`,
+          'X-Generated-At': new Date().toISOString()
         }
       });
 
@@ -91,14 +90,14 @@ export default {
         const responseToCache = modifiedResponse.clone();
         const cacheHeaders = Object.fromEntries(responseToCache.headers.entries());
         cacheHeaders['Cache-Control'] = 'public, max-age=3600, s-maxage=3600'; // 1 hour
-        cacheHeaders['Cache-Tag'] = `broker-page,country-${countryCode},dynamic-content`;
+        cacheHeaders['Cache-Tag'] = `country-${countryCode},brokers,version-${cacheVersion}`;
         cacheHeaders['Vary'] = 'CF-IPCountry, User-Agent';
-
+        
         const cacheResponse = new Response(responseToCache.body, {
           status: responseToCache.status,
           headers: cacheHeaders
         });
-
+        
         ctx.waitUntil(cache.put(cacheKey, cacheResponse));
       }
 
@@ -110,7 +109,7 @@ export default {
       const fallbackHeaders = Object.fromEntries(fallbackResponse.headers.entries());
       fallbackHeaders['X-Worker-Error'] = error.message;
       fallbackHeaders['X-Error-Timestamp'] = new Date().toISOString();
-
+      
       return new Response(fallbackResponse.body, {
         status: fallbackResponse.status,
         headers: fallbackHeaders
@@ -122,7 +121,7 @@ export default {
 // Get brokers for specific country with improved error handling
 async function getBrokersForCountry(database, countryCode) {
   const startTime = Date.now();
-
+  
   try {
     // Primary query with country-specific sorting
     const query = `
@@ -133,14 +132,14 @@ async function getBrokersForCountry(database, countryCode) {
       ORDER BY cs.sort_order ASC
       LIMIT 6
     `;
-
+    
     const result = await database.prepare(query).bind(countryCode).all();
     console.log(`Country query for ${countryCode} took ${Date.now() - startTime}ms`);
-
+    
     if (result.results && result.results.length > 0) {
       return result.results;
     }
-
+    
     // Fallback to default brokers if no country-specific data
     console.log(`No country-specific data for ${countryCode}, using defaults`);
     const defaultQuery = `
@@ -150,10 +149,10 @@ async function getBrokersForCountry(database, countryCode) {
       ORDER BY default_sort_order ASC
       LIMIT 4
     `;
-
+    
     const defaultResult = await database.prepare(defaultQuery).all();
     return defaultResult.results || getHardcodedBrokers();
-
+    
   } catch (error) {
     console.error(`Database error for ${countryCode}:`, error);
     return getHardcodedBrokers();
@@ -163,27 +162,27 @@ async function getBrokersForCountry(database, countryCode) {
 // Hardcoded fallback brokers (for when DB is unavailable)
 function getHardcodedBrokers() {
   return [
-    {
-      id: 1,
-      name: 'eVest',
-      rating: 4.2,
-      min_deposit: 250,
+    { 
+      id: 1, 
+      name: 'eVest', 
+      rating: 4.2, 
+      min_deposit: 250, 
       description: 'وسيط متعدد التنظيم مع فروق أسعار تنافسية',
       sort_order: 1
     },
-    {
-      id: 2,
-      name: 'Exness',
-      rating: 4.5,
-      min_deposit: 10,
+    { 
+      id: 2, 
+      name: 'Exness', 
+      rating: 4.5, 
+      min_deposit: 10, 
       description: 'وسيط شهير مع حد أدنى منخفض للإيداع',
       sort_order: 2
     },
-    {
-      id: 3,
-      name: 'AvaTrade',
-      rating: 4.1,
-      min_deposit: 100,
+    { 
+      id: 3, 
+      name: 'AvaTrade', 
+      rating: 4.1, 
+      min_deposit: 100, 
       description: 'وسيط راسخ مع تنظيم قوي',
       sort_order: 3
     }
@@ -193,7 +192,7 @@ function getHardcodedBrokers() {
 // Inject broker data into HTML with improved placeholder detection
 function injectBrokerData(html, brokers, countryCode) {
   const brokerPlaceholder = '<!-- BROKERS_PLACEHOLDER -->';
-
+  
   if (!html.includes(brokerPlaceholder)) {
     console.warn('Broker placeholder not found in HTML');
     return html;
@@ -214,12 +213,12 @@ function generateBrokerHtml(brokers, countryCode) {
   }
 
   let html = '<section class="brokers-section"><div class="companies-grid">';
-
+  
   brokers.forEach((broker, index) => {
     const minDeposit = broker.min_deposit || 0;
     const rating = broker.rating || 0;
     const description = broker.description || 'وسيط موثوق للتداول';
-
+    
     html += `
       <article class="company-card" data-position="${index + 1}" data-broker-id="${broker.id}">
         <div class="company-content">
@@ -234,7 +233,7 @@ function generateBrokerHtml(brokers, countryCode) {
       </article>
     `;
   });
-
+  
   html += '</div></section>';
   return html;
 }
@@ -243,7 +242,7 @@ function generateBrokerHtml(brokers, countryCode) {
 async function checkDynamicRoute(database, pathname) {
   try {
     const decodedPath = decodeURIComponent(pathname);
-
+    
     // Simple check first (most common cases)
     const commonRoutes = [
       'شركات-تداول-مرخصة-في-السعودية',
@@ -251,13 +250,13 @@ async function checkDynamicRoute(database, pathname) {
       'trading-companies',
       'forex-brokers'
     ];
-
+    
     for (const route of commonRoutes) {
       if (decodedPath.includes(route)) {
         return true;
       }
     }
-
+    
     // Database check for custom routes (if table exists)
     const query = `
       SELECT COUNT(*) as count
@@ -268,17 +267,17 @@ async function checkDynamicRoute(database, pathname) {
       )
       LIMIT 1
     `;
-
+    
     const result = await database.prepare(query).bind(decodedPath, decodedPath).first();
     return result?.count > 0;
-
+    
   } catch (error) {
     console.error('Route check error:', error);
     // Fallback to basic pattern matching
     const path = decodeURIComponent(pathname).toLowerCase();
-    return path.includes('شركات-تداول-مرخصة-في-السعودية') ||
-      path.includes('broker') ||
-      path.includes('trading');
+    return path.includes('شركات-تداول-مرخصة-في-السعودية') || 
+           path.includes('broker') ||
+           path.includes('trading');
   }
 }
 
@@ -286,7 +285,7 @@ async function checkDynamicRoute(database, pathname) {
 function getCountryName(countryCode = 'SA') {
   const countryNames = {
     'SA': 'السعودية',
-    'AE': 'الإمارات',
+    'AE': 'الإمارات', 
     'KW': 'الكويت',
     'BH': 'البحرين',
     'QA': 'قطر',
@@ -313,6 +312,6 @@ function getCountryName(countryCode = 'SA') {
     'TR': 'تركيا',
     'ZA': 'جنوب أفريقيا'
   };
-
+  
   return countryNames[countryCode] || 'منطقتك';
 }
