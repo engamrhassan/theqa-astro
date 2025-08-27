@@ -2,9 +2,6 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-// Keep homepage static
-export const prerender = true;
-
 // Get all published articles
 const allArticles = await getCollection('articles', ({ data }) => {
   return !data.draft;
