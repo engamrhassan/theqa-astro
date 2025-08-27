@@ -2,9 +2,33 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BrokerList from '../components/BrokerList.astro';
 
+export async function getStaticPaths() {
+  return [
+    {
+      params: { slug: 'شركات-تداول-مرخصة-في-السعودية' },
+      props: {
+        apiSlug: 'شركات-تداول-مرخصة-في-السعودية',
+        defaultTitle: 'شركات التداول المرخصة في السعودية - المدونة العربية',
+        defaultDescription: 'دليل شامل لأهم شركات التداول المرخصة والموثوقة في المملكة العربية السعودية'
+      }
+    },
+    {
+      params: { slug: 'منصات-تداول-العملات-الرقمية-في-الإمارات' },
+      props: {
+        apiSlug: 'منصات-تداول-العملات-الرقمية-في-الإمارات',
+        defaultTitle: 'منصات التداول المرخصة في الإمارات - المدونة العربية',
+        defaultDescription: 'دليل شامل لأهم منصات التداول المرخصة والموثوقة في الإمارات'
+      }
+    }
+  ];
+}
+
+const { slug } = Astro.params;
+const { apiSlug, defaultTitle, defaultDescription } = Astro.props;
+
 // API configuration
 const API_CONFIG = {
-  url: "https://theqalink.com/api/v1/page/منصات-تداول-العملات-الرقمية-في-الإمارات",
+  url: `https://theqalink.com/api/v1/page/${apiSlug}`,
   headers: {
     "Accept": "application/json",
     "X-API-Hash": "b3da624e147174b654c4c9358ac40c4ca716cb9db56b0da0e2f8200553922ac0",
@@ -32,8 +56,6 @@ try {
   
   const data = await response.json();
   
-
-  
   // Extract only name and content from the API response
   const extractedTitle = data.data?.name || '';
   const extractedContent = data.data?.content || '';
@@ -54,8 +76,8 @@ try {
 ---
 
 <BaseLayout 
-  title={pageData?.title || "منصات التداول المرخصة في الإمارات - المدونة العربية"}
-  description={pageData?.meta_description || "دليل شامل لأهم منصات التداول المرخصة والموثوقة في الإمارات"}
+  title={pageData?.title || defaultTitle}
+  description={pageData?.meta_description || defaultDescription}
 >
   <div class="container">
     {pageData && (

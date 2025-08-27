@@ -34,7 +34,6 @@ export default {
           statusText: cachedResponse.statusText,
           headers: {
             ...Object.fromEntries(cachedResponse.headers.entries()),
-            'X-Cache-Status': 'HIT',
             'X-Country-Code': countryCode,
             'X-Cache-Key': `${countryCode}-v${cacheVersion}`,
             'X-Served-At': new Date().toISOString()
@@ -76,7 +75,6 @@ export default {
           ...Object.fromEntries(originalResponse.headers.entries()),
           'Content-Type': 'text/html; charset=utf-8',
           'X-Country-Code': countryCode,
-          'X-Cache-Status': 'MISS',
           'X-Broker-Count': brokerData.length.toString(),
           'X-Cache-Key': `${countryCode}-v${cacheVersion}`,
           'X-Generated-At': new Date().toISOString()
