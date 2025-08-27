@@ -3,7 +3,7 @@ main = "worker.js"
 compatibility_date = "2025-08-22"
 
 [vars]
-CACHE_VERSION = "26"
+PURGE_TOKEN = "dfdf76dfdfyuh343kfd63hje3"
 
 routes = [
   "astro.theqalink.com/*"
