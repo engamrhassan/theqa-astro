@@ -236,7 +236,10 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
             </div>
 
             <div class="broker-actions">
-              <button class="btn-primary" data-url={broker.website_url}>
+              <button class="btn-primary" 
+                      data-url={broker.website_url} 
+                      data-broker-name={broker.name}
+                      data-broker-logo={broker.logo}>
                 زيارة موقع {broker.name || 'الشركة'}
               </button>
               <a href={`/broker/${broker.id}`} class="btn-secondary">
@@ -254,6 +257,39 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
         </div>
       )}
     </section>
+  </div>
+
+  <!-- Popup Modal -->
+  <div id="brokerModal" class="modal-overlay">
+    <div class="modal-content">
+      <button class="modal-close" id="closeModal">&times;</button>
+      
+      <div class="modal-header">
+        <h2>تنبيه</h2>
+      </div>
+      
+      <div class="modal-body">
+        <p class="warning-text">
+          عزيزي الزائر شركة <span id="modalBrokerName">Evest</span> لا ندعم التداول في بلدك، ننصح عليك الآن أصحراً 
+          لك أفضل شركة تداول مرخصة يمكن التداول معها اليوم
+        </p>
+        
+        <div class="broker-recommendation">
+          <div class="recommended-broker">
+            <div class="broker-logo-modal">
+              <img id="modalBrokerLogo" src="" alt="Broker Logo" />
+            </div>
+            <div class="broker-info-modal">
+              <h3 id="modalRecommendedName">Exness</h3>
+            </div>
+          </div>
+          
+          <button class="modal-cta-btn" id="openAccountBtn">
+            افتح حساب
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </BaseLayout>
 
@@ -489,6 +525,191 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
     color: rgb(var(--color-gray-900));
   }
 
+  /* Modal Styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.show {
+    display: flex;
+  }
+
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: modalSlideIn 0.3s ease-out;
+  }
+
+  @keyframes modalSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-30px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 15px;
+    left: 20px;
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: rgb(var(--color-gray-500));
+    z-index: 1001;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+  }
+
+  .modal-close:hover {
+    background: rgb(var(--color-gray-100));
+    color: rgb(var(--color-gray-700));
+  }
+
+  .modal-header {
+    text-align: center;
+    padding: var(--space-6) var(--space-6) var(--space-4);
+    border-bottom: 1px solid rgb(var(--color-gray-200));
+  }
+
+  .modal-header h2 {
+    color: rgb(var(--color-gray-900));
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .modal-body {
+    padding: var(--space-6);
+  }
+
+  .warning-text {
+    text-align: center;
+    color: rgb(var(--color-gray-700));
+    line-height: 1.6;
+    margin-bottom: var(--space-6);
+    font-size: var(--font-size-base);
+  }
+
+  .warning-text span {
+    font-weight: 600;
+    color: rgb(var(--color-primary));
+  }
+
+  .broker-recommendation {
+    border: 2px solid rgb(var(--color-gray-200));
+    border-radius: 12px;
+    padding: var(--space-4);
+    background: rgb(var(--color-gray-50));
+  }
+
+  .recommended-broker {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  .broker-logo-modal {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgb(var(--color-gray-200));
+  }
+
+  .broker-logo-modal img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .broker-info-modal h3 {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+    color: rgb(var(--color-gray-900));
+    margin: 0;
+  }
+
+  .modal-cta-btn {
+    width: 100%;
+    padding: var(--space-4) var(--space-6);
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .modal-cta-btn:hover {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(251, 191, 36, 0.3);
+  }
+
+  /* Modal Responsive */
+  @media (max-width: 768px) {
+    .modal-content {
+      margin: var(--space-4);
+      width: calc(100% - 2rem);
+    }
+    
+    .modal-header {
+      padding: var(--space-4) var(--space-4) var(--space-3);
+    }
+    
+    .modal-body {
+      padding: var(--space-4);
+    }
+    
+    .broker-logo-modal {
+      width: 50px;
+      height: 50px;
+    }
+    
+    .broker-info-modal h3 {
+      font-size: var(--font-size-lg);
+    }
+    
+    .warning-text {
+      font-size: var(--font-size-sm);
+    }
+  }
+
   /* Responsive Design */
   @media (max-width: 1024px) {
     .reviews-container {
@@ -553,26 +774,75 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
 </style>
 
 <script>
-  // Add click handlers for broker website buttons
+  // Add click handlers for broker website buttons and modal functionality
   document.addEventListener('DOMContentLoaded', () => {
     const brokerButtons = document.querySelectorAll('.btn-primary') as NodeListOf<HTMLButtonElement>;
+    const modal = document.getElementById('brokerModal') as HTMLElement;
+    const closeBtn = document.getElementById('closeModal') as HTMLButtonElement;
+    const openAccountBtn = document.getElementById('openAccountBtn') as HTMLButtonElement;
+    const modalBrokerName = document.getElementById('modalBrokerName') as HTMLSpanElement;
+    const modalBrokerLogo = document.getElementById('modalBrokerLogo') as HTMLImageElement;
+    const modalRecommendedName = document.getElementById('modalRecommendedName') as HTMLHeadingElement;
+    
+    // Default recommended broker (Exness)
+    const recommendedBroker = {
+      name: 'Exness',
+      logo: 'https://theqalink.com/img/Evest-logo-2025.svg', // You can replace with actual Exness logo URL
+      url: 'https://one.exness.link/a/g6l4zosv' // Replace with actual Exness affiliate URL
+    };
     
     brokerButtons.forEach(button => {
       button.addEventListener('click', (e) => {
-        const websiteUrl = button.dataset.url;
-        const brokerCard = button.closest('.broker-card');
-        const brokerName = brokerCard?.querySelector('.broker-name')?.textContent;
+        e.preventDefault();
         
-        if (websiteUrl && websiteUrl !== 'undefined') {
-          // Redirect to actual broker website
-          window.open(websiteUrl, '_blank', 'noopener,noreferrer');
+        const brokerName = button.dataset.brokerName || 'الشركة';
+        const brokerLogo = button.dataset.brokerLogo;
+        
+        // Update modal content
+        modalBrokerName.textContent = brokerName;
+        modalRecommendedName.textContent = recommendedBroker.name;
+        
+        if (brokerLogo && brokerLogo !== 'undefined') {
+          modalBrokerLogo.src = brokerLogo;
+          modalBrokerLogo.alt = `${brokerName} logo`;
         } else {
-          // Fallback message if no URL available
-          alert(`موقع ${brokerName} غير متاح حالياً`);
+          modalBrokerLogo.src = recommendedBroker.logo;
+          modalBrokerLogo.alt = `${recommendedBroker.name} logo`;
         }
         
-        console.log(`Attempting to redirect to ${brokerName} website: ${websiteUrl}`);
+        // Show modal
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
       });
+    });
+    
+    // Close modal handlers
+    function closeModal() {
+      modal.classList.remove('show');
+      document.body.style.overflow = ''; // Restore scrolling
+    }
+    
+    closeBtn.addEventListener('click', closeModal);
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('show')) {
+        closeModal();
+      }
+    });
+    
+    // Handle "Open Account" button
+    openAccountBtn.addEventListener('click', () => {
+      // Redirect to recommended broker (Exness)
+      window.open(recommendedBroker.url, '_blank', 'noopener,noreferrer');
+      closeModal();
     });
   });
 </script>
