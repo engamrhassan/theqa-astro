@@ -2,6 +2,11 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BrokerList from '../components/BrokerList.astro';
 
+// Set cache headers for ISR (revalidate every 10 minutes)
+if (Astro.response) {
+  Astro.response.headers.set('Cache-Control', 's-maxage=600, stale-while-revalidate=3600');
+}
+
 // API configuration
 const API_CONFIG = {
   url: "https://theqalink.com/api/v1/page/شركات-تداول-مرخصة-في-السعودية",

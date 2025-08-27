@@ -1,7 +1,13 @@
 import { defineConfig } from 'astro/config';
+import cloudflare from '@astrojs/cloudflare';
 
 export default defineConfig({
   site: 'https://astro.theqalink.com',
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true
+    }
+  }),
   i18n: {
     defaultLocale: 'ar',
     locales: ['ar'],
@@ -9,7 +15,7 @@ export default defineConfig({
       prefixDefaultLocale: false
     }
   },
-  output: 'static', // Keep static for simplicity
+  output: 'server', // Enable SSR for dynamic pages
   build: {
     inlineStylesheets: 'auto'
   },
