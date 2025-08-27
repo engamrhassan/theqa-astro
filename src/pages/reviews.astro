@@ -188,7 +188,7 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
     <section class="brokers-section">
       <div class="brokers-grid">
         {sortedBrokers.map((broker: ReviewBroker) => (
-          <article class="broker-card" data-status={broker.status}>
+          <article class="broker-card" data-status={broker.status} data-broker-id={broker.id}>
             <div class="broker-header">
               <div class="broker-info">
                 <div class="broker-logo">
@@ -783,12 +783,33 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
     const modalBrokerName = document.getElementById('modalBrokerName') as HTMLSpanElement;
     const modalBrokerLogo = document.getElementById('modalBrokerLogo') as HTMLImageElement;
     const modalRecommendedName = document.getElementById('modalRecommendedName') as HTMLHeadingElement;
+    const warningText = document.querySelector('.warning-text') as HTMLParagraphElement;
     
-    // Default recommended broker (Exness)
-    const recommendedBroker = {
+    // Get country data from worker (injected by Cloudflare Worker)
+    const userCountry = (window as any).USER_COUNTRY || 'US';
+    const countryName = (window as any).COUNTRY_NAME || 'بلدك';
+    const unsupportedBrokers = (window as any).UNSUPPORTED_BROKERS || [];
+    
+    // Create a map of unsupported brokers for quick lookup
+    const unsupportedMap = new Map();
+    unsupportedBrokers.forEach((item: any) => {
+      unsupportedMap.set(item.broker_id.toString(), {
+        restriction_type: item.restriction_type,
+        reason: item.reason,
+        alternative: {
+          id: item.alternative_id,
+          name: item.alternative_name,
+          logo: item.alternative_logo,
+          url: item.alternative_url
+        }
+      });
+    });
+    
+    // Default fallback broker
+    const defaultBroker = {
       name: 'Exness',
-      logo: 'https://theqalink.com/img/Evest-logo-2025.svg', // You can replace with actual Exness logo URL
-      url: 'https://one.exness.link/a/g6l4zosv' // Replace with actual Exness affiliate URL
+      logo: 'https://theqalink.com/img/Evest-logo-2025.svg',
+      url: 'https://one.exness.link/a/g6l4zosv'
     };
     
     brokerButtons.forEach(button => {
@@ -797,29 +818,65 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
         
         const brokerName = button.dataset.brokerName || 'الشركة';
         const brokerLogo = button.dataset.brokerLogo;
+        const brokerCard = button.closest('.broker-card') as HTMLElement;
+        const brokerId = brokerCard?.dataset.brokerId || button.dataset.brokerId;
         
-        // Update modal content
-        modalBrokerName.textContent = brokerName;
-        modalRecommendedName.textContent = recommendedBroker.name;
+        // Check if broker is unsupported in user's country
+        const restriction = unsupportedMap.get(brokerId);
         
-        if (brokerLogo && brokerLogo !== 'undefined') {
-          modalBrokerLogo.src = brokerLogo;
-          modalBrokerLogo.alt = `${brokerName} logo`;
+        if (restriction) {
+          // Broker is not supported, show warning with alternative
+          const alternative = restriction.alternative.name ? restriction.alternative : defaultBroker;
+          
+          // Update modal content for unsupported broker
+          modalBrokerName.textContent = brokerName;
+          modalRecommendedName.textContent = alternative.name;
+          
+          // Update warning text with country-specific message
+          warningText.innerHTML = `
+            عزيزي الزائر شركة <span>${brokerName}</span> لا ندعم التداول في ${countryName}، ننصحك الآن بأفضل شركة تداول مرخصة يمكن التداول معها اليوم
+          `;
+          
+          // Set alternative broker logo
+          modalBrokerLogo.src = alternative.logo || defaultBroker.logo;
+          modalBrokerLogo.alt = `${alternative.name} logo`;
+          
+          // Update the CTA button to redirect to alternative
+          openAccountBtn.onclick = () => {
+            window.open(alternative.url || defaultBroker.url, '_blank', 'noopener,noreferrer');
+            closeModal();
+          };
+          
+          // Show modal
+          modal.classList.add('show');
+          document.body.style.overflow = 'hidden';
+          
+          console.log(`Broker ${brokerName} is ${restriction.restriction_type} in ${userCountry}. Reason: ${restriction.reason}`);
         } else {
-          modalBrokerLogo.src = recommendedBroker.logo;
-          modalBrokerLogo.alt = `${recommendedBroker.name} logo`;
+          // Broker is supported, redirect directly to their website
+          const websiteUrl = button.dataset.url;
+          if (websiteUrl && websiteUrl !== 'undefined') {
+            window.open(websiteUrl, '_blank', 'noopener,noreferrer');
+          } else {
+            // Fallback: show modal with default broker
+            modalBrokerName.textContent = brokerName;
+            modalRecommendedName.textContent = defaultBroker.name;
+            warningText.innerHTML = `
+              عزيزي الزائر، يرجى زيارة الموقع الرسمي لشركة <span>${brokerName}</span> أو استخدام البديل المقترح
+            `;
+            modalBrokerLogo.src = defaultBroker.logo;
+            modalBrokerLogo.alt = `${defaultBroker.name} logo`;
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+          }
         }
-        
-        // Show modal
-        modal.classList.add('show');
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
       });
     });
     
     // Close modal handlers
     function closeModal() {
       modal.classList.remove('show');
-      document.body.style.overflow = ''; // Restore scrolling
+      document.body.style.overflow = '';
     }
     
     closeBtn.addEventListener('click', closeModal);
@@ -838,12 +895,9 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
       }
     });
     
-    // Handle "Open Account" button
-    openAccountBtn.addEventListener('click', () => {
-      // Redirect to recommended broker (Exness)
-      window.open(recommendedBroker.url, '_blank', 'noopener,noreferrer');
-      closeModal();
-    });
+    // Debug logging
+    console.log('User Country:', userCountry);
+    console.log('Unsupported Brokers:', unsupportedBrokers);
   });
 </script>
 </BaseLayout>

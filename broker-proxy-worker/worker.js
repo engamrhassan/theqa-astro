@@ -29,7 +29,8 @@ export default {
       // Get HTML and inject broker data
       let html = await originalResponse.text();
       const brokerData = await getBrokersForCountry(env.DB, countryCode);
-      html = injectBrokerData(html, brokerData, countryCode);
+      const unsupportedBrokers = await getUnsupportedBrokers(env.DB, countryCode);
+      html = injectBrokerData(html, brokerData, countryCode, unsupportedBrokers);
 
       // Return modified response with proper cache headers
       return new Response(html, {
@@ -40,6 +41,7 @@ export default {
           'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=300', // 1 hour cache
           'X-Country-Code': countryCode,
           'X-Broker-Count': brokerData.length.toString(),
+          'X-Unsupported-Count': unsupportedBrokers.length.toString(),
           'Vary': 'CF-IPCountry', // Cache varies by country
           'X-Frame-Options': 'SAMEORIGIN',
           'X-Content-Type-Options': 'nosniff'
@@ -87,17 +89,19 @@ async function handleCachePurge(request, url, env) {
 // Get brokers for specific country from database
 async function getBrokersForCountry(database, countryCode) {
   try {
-    // Query for country-specific brokers
+    // Query for country-specific brokers with restriction info
     const query = `
-      SELECT b.id, b.name, b.logo, b.rating, b.min_deposit, b.description, cs.sort_order
+      SELECT b.id, b.name, b.logo, b.rating, b.min_deposit, b.description, 
+             cs.sort_order, uc.restriction_type, uc.reason, uc.alternative_broker_id
       FROM brokers b
       JOIN country_sorting cs ON b.id = cs.broker_id
+      LEFT JOIN unsupported_countries uc ON b.id = uc.broker_id AND uc.country_code = ? AND uc.is_active = 1
       WHERE cs.country_code = ? AND b.is_active = 1
       ORDER BY cs.sort_order ASC
       LIMIT 6
     `;
     
-    const result = await database.prepare(query).bind(countryCode).all();
+    const result = await database.prepare(query).bind(countryCode, countryCode).all();
     
     if (result.results && result.results.length > 0) {
       return result.results;
@@ -106,19 +110,44 @@ async function getBrokersForCountry(database, countryCode) {
     // Fallback to default brokers if no country-specific data
     console.log(`No data for ${countryCode}, using defaults`);
     const defaultQuery = `
-      SELECT id, name, logo, rating, min_deposit, description, default_sort_order as sort_order
-      FROM brokers
-      WHERE is_active = 1
-      ORDER BY default_sort_order ASC
+      SELECT b.id, b.name, b.logo, b.rating, b.min_deposit, b.description, 
+             b.default_sort_order as sort_order, uc.restriction_type, uc.reason, uc.alternative_broker_id
+      FROM brokers b
+      LEFT JOIN unsupported_countries uc ON b.id = uc.broker_id AND uc.country_code = ? AND uc.is_active = 1
+      WHERE b.is_active = 1
+      ORDER BY b.default_sort_order ASC
       LIMIT 4
     `;
     
-    const defaultResult = await database.prepare(defaultQuery).all();
+    const defaultResult = await database.prepare(defaultQuery).bind(countryCode).all();
     return defaultResult.results || getHardcodedBrokers();
     
   } catch (error) {
     console.error(`Database error for ${countryCode}:`, error);
     return getHardcodedBrokers();
+  }
+}
+
+// Get unsupported brokers and their alternatives for a country
+async function getUnsupportedBrokers(database, countryCode) {
+  try {
+    const query = `
+      SELECT uc.broker_id, uc.restriction_type, uc.reason, 
+             b.name as broker_name, b.logo as broker_logo,
+             alt.id as alternative_id, alt.name as alternative_name, 
+             alt.logo as alternative_logo, alt.website_url as alternative_url
+      FROM unsupported_countries uc
+      JOIN brokers b ON uc.broker_id = b.id
+      LEFT JOIN brokers alt ON uc.alternative_broker_id = alt.id
+      WHERE uc.country_code = ? AND uc.is_active = 1 AND b.is_active = 1
+    `;
+    
+    const result = await database.prepare(query).bind(countryCode).all();
+    return result.results || [];
+    
+  } catch (error) {
+    console.error(`Error fetching unsupported brokers for ${countryCode}:`, error);
+    return [];
   }
 }
 
@@ -161,6 +190,7 @@ async function checkDynamicRoute(database, pathname) {
     const commonRoutes = [
       'شركات-تداول-مرخصة-في-السعودية',
       'منصات-تداول-العملات-الرقمية-في-الإمارات',
+      'reviews',
       'brokers',
       'trading-companies',
       'forex-brokers'
@@ -198,16 +228,27 @@ async function checkDynamicRoute(database, pathname) {
 }
 
 // Inject broker data into HTML
-function injectBrokerData(html, brokers, countryCode) {
-  const brokerPlaceholder = '<!-- BROKERS_PLACEHOLDER -->';
+function injectBrokerData(html, brokers, countryCode, unsupportedBrokers = []) {
+  // Inject country and unsupported brokers data as JavaScript variables
+  const countryDataScript = `
+    <script>
+      window.USER_COUNTRY = '${countryCode}';
+      window.UNSUPPORTED_BROKERS = ${JSON.stringify(unsupportedBrokers)};
+      window.COUNTRY_NAME = '${getCountryName(countryCode)}';
+    </script>
+  `;
   
-  if (!html.includes(brokerPlaceholder)) {
-    console.warn('Broker placeholder not found in HTML');
-    return html;
+  // Inject the script before closing head tag
+  html = html.replace('</head>', countryDataScript + '</head>');
+  
+  // Handle broker placeholder if it exists
+  const brokerPlaceholder = '<!-- BROKERS_PLACEHOLDER -->';
+  if (html.includes(brokerPlaceholder)) {
+    const brokerHtml = generateBrokerHtml(brokers, countryCode);
+    html = html.replace(brokerPlaceholder, brokerHtml);
   }
-
-  const brokerHtml = generateBrokerHtml(brokers, countryCode);
-  return html.replace(brokerPlaceholder, brokerHtml);
+  
+  return html;
 }
 
 // Generate broker HTML

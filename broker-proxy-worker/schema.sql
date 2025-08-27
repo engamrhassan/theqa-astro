@@ -38,10 +38,29 @@ CREATE TABLE dynamic_routes (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Table for countries that don't support specific brokers
+CREATE TABLE unsupported_countries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    broker_id INTEGER NOT NULL,
+    country_code TEXT NOT NULL,
+    country_name TEXT,
+    restriction_type TEXT DEFAULT 'blocked', -- 'blocked', 'restricted', 'unavailable'
+    reason TEXT, -- reason for restriction (e.g., 'regulatory', 'license', 'policy')
+    alternative_broker_id INTEGER, -- suggested alternative broker
+    redirect_url TEXT, -- specific redirect URL for this country
+    is_active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (broker_id) REFERENCES brokers (id) ON DELETE CASCADE,
+    FOREIGN KEY (alternative_broker_id) REFERENCES brokers (id) ON DELETE SET NULL,
+    UNIQUE(broker_id, country_code)
+);
+
 -- Index for faster queries
 CREATE INDEX idx_country_sorting ON country_sorting(country_code, sort_order);
 CREATE INDEX idx_brokers_active ON brokers(is_active, default_sort_order);
 CREATE INDEX idx_dynamic_routes ON dynamic_routes(is_active);
+CREATE INDEX idx_unsupported_countries ON unsupported_countries(broker_id, country_code, is_active);
 
 -- Sample broker data
 INSERT INTO brokers (name, slug, logo, rating, min_deposit, description, website_url, default_sort_order) VALUES
@@ -96,6 +115,26 @@ INSERT INTO dynamic_routes (route_pattern) VALUES
 ('broker-comparison'),
 ('trading-platforms');
 
+-- Sample unsupported countries data
+-- eVest not supported in these countries
+INSERT INTO unsupported_countries (broker_id, country_code, country_name, restriction_type, reason, alternative_broker_id) VALUES
+(1, 'US', 'United States', 'blocked', 'regulatory', 2), -- eVest blocked in US, suggest Exness
+(1, 'CA', 'Canada', 'blocked', 'regulatory', 3), -- eVest blocked in Canada, suggest AvaTrade
+(1, 'IR', 'Iran', 'blocked', 'sanctions', 2), -- eVest blocked in Iran, suggest Exness
+(1, 'SY', 'Syria', 'blocked', 'sanctions', 2), -- eVest blocked in Syria, suggest Exness
+
+-- Exness restrictions
+(2, 'US', 'United States', 'blocked', 'regulatory', 3), -- Exness blocked in US, suggest AvaTrade
+(2, 'BE', 'Belgium', 'restricted', 'regulatory', 4), -- Exness restricted in Belgium, suggest XTB
+
+-- AvaTrade restrictions  
+(3, 'TR', 'Turkey', 'unavailable', 'license', 2), -- AvaTrade unavailable in Turkey, suggest Exness
+(3, 'CN', 'China', 'blocked', 'regulatory', 2), -- AvaTrade blocked in China, suggest Exness
+
+-- XTB restrictions
+(4, 'MY', 'Malaysia', 'restricted', 'regulatory', 2), -- XTB restricted in Malaysia, suggest Exness
+(4, 'ID', 'Indonesia', 'unavailable', 'license', 1); -- XTB unavailable in Indonesia, suggest eVest
+
 -- Query examples for testing:
 
 -- Get brokers for US users
@@ -111,3 +150,36 @@ INSERT INTO dynamic_routes (route_pattern) VALUES
 -- JOIN country_sorting cs ON b.id = cs.broker_id 
 -- WHERE cs.country_code = 'GB' 
 -- ORDER BY cs.sort_order ASC;
+
+-- Check if a broker is supported in a specific country
+-- SELECT b.name, uc.restriction_type, uc.reason, alt.name as alternative_broker
+-- FROM brokers b
+-- LEFT JOIN unsupported_countries uc ON b.id = uc.broker_id AND uc.country_code = 'US'
+-- LEFT JOIN brokers alt ON uc.alternative_broker_id = alt.id
+-- WHERE b.id = 1; -- Check eVest for US
+
+-- Get all unsupported brokers for a country with alternatives
+-- SELECT b.name as blocked_broker, uc.restriction_type, uc.reason, 
+--        alt.name as suggested_alternative, uc.redirect_url
+-- FROM unsupported_countries uc
+-- JOIN brokers b ON uc.broker_id = b.id
+-- LEFT JOIN brokers alt ON uc.alternative_broker_id = alt.id
+-- WHERE uc.country_code = 'US' AND uc.is_active = 1;
+
+-- Get available brokers for a country (excluding unsupported ones)
+-- SELECT DISTINCT b.*
+-- FROM brokers b
+-- LEFT JOIN unsupported_countries uc ON b.id = uc.broker_id AND uc.country_code = 'US'
+-- WHERE b.is_active = 1 AND uc.id IS NULL
+-- ORDER BY b.default_sort_order;
+
+-- Get country-specific broker list with restrictions
+-- SELECT b.*, cs.sort_order, cs.is_featured,
+--        CASE WHEN uc.id IS NOT NULL THEN 1 ELSE 0 END as is_restricted,
+--        uc.restriction_type, uc.reason, alt.name as alternative_broker
+-- FROM brokers b
+-- LEFT JOIN country_sorting cs ON b.id = cs.broker_id AND cs.country_code = 'US'
+-- LEFT JOIN unsupported_countries uc ON b.id = uc.broker_id AND uc.country_code = 'US'
+-- LEFT JOIN brokers alt ON uc.alternative_broker_id = alt.id
+-- WHERE b.is_active = 1
+-- ORDER BY COALESCE(cs.sort_order, b.default_sort_order);
