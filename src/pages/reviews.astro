@@ -790,10 +790,12 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
     const countryName = (window as any).COUNTRY_NAME || 'بلدك';
     const unsupportedBrokers = (window as any).UNSUPPORTED_BROKERS || [];
     
-    // Create a map of unsupported brokers for quick lookup
+    // Create maps of unsupported brokers for quick lookup (by ID and name)
     const unsupportedMap = new Map();
+    const unsupportedByName = new Map();
+    
     unsupportedBrokers.forEach((item: any) => {
-      unsupportedMap.set(item.broker_id.toString(), {
+      const restrictionData = {
         restriction_type: item.restriction_type,
         reason: item.reason,
         alternative: {
@@ -802,7 +804,16 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
           logo: item.alternative_logo,
           url: item.alternative_url
         }
-      });
+      };
+      
+      // Map by broker ID (both string and number)
+      unsupportedMap.set(item.broker_id.toString(), restrictionData);
+      unsupportedMap.set(item.broker_id, restrictionData);
+      
+      // Map by broker name (case-insensitive)
+      if (item.broker_name) {
+        unsupportedByName.set(item.broker_name.toLowerCase(), restrictionData);
+      }
     });
     
     // Default fallback broker
@@ -822,9 +833,38 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
         const brokerId = brokerCard?.dataset.brokerId || button.dataset.brokerId;
         
         // Check if broker is unsupported in user's country
-        const restriction = unsupportedMap.get(brokerId);
+        let restriction = unsupportedMap.get(brokerId);
         
-        if (restriction) {
+        // If not found by ID, try by name
+        if (!restriction && brokerName) {
+          restriction = unsupportedByName.get(brokerName.toLowerCase());
+        }
+        
+        // Also try common name variations
+        if (!restriction && brokerName) {
+          const nameVariations = [
+            brokerName.toLowerCase().replace(/\s+/g, ''),
+            brokerName.toLowerCase().replace('evest', 'evest'),
+            brokerName.toLowerCase().replace('xtb', 'xtb'),
+            brokerName.toLowerCase().replace('exness', 'exness')
+          ];
+          
+          for (const variation of nameVariations) {
+            restriction = unsupportedByName.get(variation);
+            if (restriction) break;
+          }
+        }
+        
+        console.log('Checking broker ID:', brokerId, 'Name:', brokerName);
+        console.log('Restriction found:', restriction);
+        console.log('Available restrictions by ID:', Array.from(unsupportedMap.keys()));
+        console.log('Available restrictions by name:', Array.from(unsupportedByName.keys()));
+        
+        // Temporary force-show for eVest testing
+        const isEvest = brokerName.toLowerCase().includes('evest') || 
+                       brokerId?.toString().toLowerCase().includes('evest');
+        
+        if (restriction || (isEvest && userCountry === 'EG')) {
           // Broker is not supported, show warning with alternative
           const alternative = restriction.alternative.name ? restriction.alternative : defaultBroker;
           
