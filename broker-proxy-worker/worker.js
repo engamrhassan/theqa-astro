@@ -230,6 +230,7 @@ function generateBrokerHtml(brokers, countryCode) {
     html += `
       <article class="company-card" data-position="${index + 1}" data-broker-id="${broker.id}">
         <div class="company-content">
+          ${broker.logo ? `<img src="${broker.logo}" alt="${broker.name} logo" class="company-logo" style="max-width:80px;max-height:80px;display:block;margin:0 auto 1rem;" loading="lazy" />` : ''}
           <h3>${broker.name}</h3>
           <p>${description}</p>
           <div class="company-features">

@@ -6,33 +6,33 @@ export interface Props {
   article?: boolean;
 }
 
-const { title, description = 'مدونة عربية متميزة', image = '/og-default.jpg', article = false } = Astro.props;
+const { 
+  title, 
+  description = 'مدونة عربية متميزة', 
+  image = '/og-default.jpg', 
+  article = false 
+} = Astro.props;
+
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const currentYear = new Date().getFullYear();
 ---
 
 <!doctype html>
 <html lang="ar" dir="rtl">
   <head>
-    <!-- Resource Hints -->
-    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://astro.theqalink.com" />
-    
+    <!-- Meta -->
     <meta charset="UTF-8" />
-    <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
     
-    <!-- Canonical URL -->
-    <link rel="canonical" href={canonicalURL} />
-    
-    <!-- Primary Meta Tags -->
+    <!-- SEO -->
     <title>{title}</title>
     <meta name="title" content={title} />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph -->
     <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:url" content={Astro.url} />
     <meta property="og:title" content={title} />
@@ -46,201 +46,472 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
     <meta property="twitter:description" content={description} />
     <meta property="twitter:image" content={new URL(image, Astro.url)} />
     
-    <!-- Optimized Fonts -->    
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap&subset=arabic" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap&subset=arabic" rel="stylesheet" /></noscript>
+    <!-- Performance -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://astro.theqalink.com" />
+    
+    <!-- Fonts with fallback -->
+    <link 
+      rel="preload" 
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap&subset=arabic" 
+      as="style" 
+      onload="this.onload=null;this.rel='stylesheet'" 
+    />
+    <noscript>
+      <link 
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap&subset=arabic" 
+        rel="stylesheet" 
+      />
+    </noscript>
   </head>
+  
   <body>
-    <header class="header">
-      <nav class="nav container">
-        <a href="/" class="logo">
+    <a href="#main-content" class="skip-link">تخطي إلى المحتوى الرئيسي</a>
+    
+    <header class="header" role="banner">
+      <nav class="nav container" role="navigation" aria-label="القائمة الرئيسية">
+        <a href="/" class="logo" aria-label="العودة للصفحة الرئيسية">
           <h1>المدونة العربية</h1>
         </a>
-        <ul class="nav-links">
-          <li><a href="/">الرئيسية</a></li>
-          <li><a href="/articles">المقالات</a></li>
-          <li><a href="/شركات-تداول-مرخصة-في-السعودية/">شركات التداول في السعودية</a></li>
-          <li><a href="/منصات-تداول-العملات-الرقمية-في-الإمارات/">منصات التداول في الإمارات</a></li>
+        
+        <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu">
+          <span class="sr-only">القائمة</span>
+          <span class="hamburger"></span>
+        </button>
+        
+        <ul class="nav-links" id="nav-menu">
+          <li><a href="/" aria-current={Astro.url.pathname === '/' ? 'page' : undefined}>الرئيسية</a></li>
+          <li><a href="/reviews" aria-current={Astro.url.pathname === '/reviews' ? 'page' : undefined}>تقييم شركات التداول و البروكرات 2025</a></li>
+          <li><a href="/articles" aria-current={Astro.url.pathname.startsWith('/articles') ? 'page' : undefined}>المقالات</a></li>
+          <li><a href="/شركات-تداول-مرخصة-في-السعودية/" aria-current={Astro.url.pathname.includes('السعودية') ? 'page' : undefined}>شركات التداول في السعودية</a></li>
+          <li><a href="/منصات-تداول-العملات-الرقمية-في-الإمارات/" aria-current={Astro.url.pathname.includes('الإمارات') ? 'page' : undefined}>منصات التداول في الإمارات</a></li>
         </ul>
       </nav>
     </header>
     
-    <main class="main">
+    <main id="main-content" class="main" role="main">
       <slot />
     </main>
     
-    <footer class="footer">
+    <footer class="footer" role="contentinfo">
       <div class="container">
-        <p>&copy; 2024 المدونة العربية. جميع الحقوق محفوظة.</p>
+        <p>&copy; {currentYear} المدونة العربية. جميع الحقوق محفوظة.</p>
       </div>
     </footer>
     
     <style>
+      /* CSS Custom Properties */
       :root {
-        --primary-color: #2563eb;
-        --secondary-color: #1e40af;
-        --text-primary: #1f2937;
-        --text-secondary: #6b7280;
-        --bg-primary: #ffffff;
-        --bg-secondary: #f9fafb;
-        --border-color: #e5e7eb;
-        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        /* Colors */
+        --color-primary: 37 99 235;
+        --color-primary-light: 59 130 246;
+        --color-primary-dark: 30 64 175;
+        --color-secondary: 107 114 128;
+        --color-success: 34 197 94;
+        --color-warning: 251 191 36;
+        --color-error: 239 68 68;
+        
+        /* Neutral colors */
+        --color-gray-50: 249 250 251;
+        --color-gray-100: 243 244 246;
+        --color-gray-200: 229 231 235;
+        --color-gray-300: 209 213 219;
+        --color-gray-400: 156 163 175;
+        --color-gray-500: 107 114 128;
+        --color-gray-600: 75 85 99;
+        --color-gray-700: 55 65 81;
+        --color-gray-800: 31 41 55;
+        --color-gray-900: 17 24 39;
+        
+        /* Typography */
+        --font-family: 'Cairo', 'Segoe UI', 'Tahoma', 'Dejavu Sans', 'Helvetica Neue', Arial, sans-serif;
+        --font-size-xs: 0.75rem;
+        --font-size-sm: 0.875rem;
+        --font-size-base: 1rem;
+        --font-size-lg: 1.125rem;
+        --font-size-xl: 1.25rem;
+        --font-size-2xl: 1.5rem;
+        --font-size-3xl: 1.875rem;
+        
+        /* Spacing */
+        --space-1: 0.25rem;
+        --space-2: 0.5rem;
+        --space-3: 0.75rem;
+        --space-4: 1rem;
+        --space-5: 1.25rem;
+        --space-6: 1.5rem;
+        --space-8: 2rem;
+        --space-10: 2.5rem;
+        --space-12: 3rem;
+        --space-16: 4rem;
+        --space-20: 5rem;
+        
+        /* Layout */
+        --container-max-width: 1200px;
+        --header-height: 80px;
+        --border-radius: 0.5rem;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        
+        /* Transitions */
+        --transition-fast: 150ms ease-in-out;
+        --transition-normal: 250ms ease-in-out;
+        --transition-slow: 350ms ease-in-out;
       }
       
-      * {
+      /* Reset & Base */
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
       
       html {
-        font-family: 'Cairo', 'Segoe UI', 'Tahoma', 'Dejavu Sans', 'Helvetica Neue', Arial, sans-serif;
+        font-family: var(--font-family);
         line-height: 1.6;
         scroll-behavior: smooth;
         font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
         text-rendering: optimizeLegibility;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+        scroll-padding-top: var(--header-height);
       }
       
       body {
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
+        background-color: rgb(var(--color-gray-50));
+        color: rgb(var(--color-gray-900));
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+        font-size: var(--font-size-base);
       }
       
+      /* Utility Classes */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      
+      .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 6px;
+        background: rgb(var(--color-primary));
+        color: white;
+        padding: var(--space-2) var(--space-4);
+        text-decoration: none;
+        border-radius: var(--border-radius);
+        z-index: 1000;
+        transition: top var(--transition-normal);
+      }
+      
+      .skip-link:focus {
+        top: 6px;
+      }
+      
+      /* Layout Components */
       .container {
-        max-width: 1200px;
+        max-width: var(--container-max-width);
         margin: 0 auto;
-        padding: 0 3rem;
+        padding: 0 var(--space-12);
+        width: 100%;
       }
       
       /* Header */
       .header {
         background-color: rgba(255, 255, 255, 0.95);
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid rgb(var(--color-gray-200));
         position: sticky;
         top: 0;
         z-index: 100;
         backdrop-filter: blur(12px);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-sm);
+        height: var(--header-height);
+        display: flex;
+        align-items: center;
       }
       
       .nav {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1.5rem 0;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding-left: 3rem;
-        padding-right: 3rem;
+        width: 100%;
+        height: 100%;
+      }
+      
+      .logo {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        align-items: center;
       }
       
       .logo h1 {
-        color: var(--primary-color);
-        font-size: 1.5rem;
+        color: rgb(var(--color-primary));
+        font-size: var(--font-size-2xl);
         font-weight: 700;
+        line-height: 1.2;
+      }
+      
+      .nav-toggle {
+        display: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: var(--space-2);
+        border-radius: var(--border-radius);
+        transition: background-color var(--transition-fast);
+      }
+      
+      .nav-toggle:hover {
+        background-color: rgb(var(--color-gray-100));
+      }
+      
+      .hamburger {
+        display: block;
+        width: 24px;
+        height: 2px;
+        background-color: rgb(var(--color-gray-700));
+        position: relative;
+        transition: background-color var(--transition-fast);
+      }
+      
+      .hamburger::before,
+      .hamburger::after {
+        content: '';
+        position: absolute;
+        width: 24px;
+        height: 2px;
+        background-color: rgb(var(--color-gray-700));
+        transition: transform var(--transition-fast);
+      }
+      
+      .hamburger::before {
+        top: -8px;
+      }
+      
+      .hamburger::after {
+        bottom: -8px;
+      }
+      
+      .nav-toggle[aria-expanded="true"] .hamburger {
+        background-color: transparent;
+      }
+      
+      .nav-toggle[aria-expanded="true"] .hamburger::before {
+        transform: rotate(45deg);
+        top: 0;
+      }
+      
+      .nav-toggle[aria-expanded="true"] .hamburger::after {
+        transform: rotate(-45deg);
+        bottom: 0;
       }
       
       .nav-links {
         display: flex;
         list-style: none;
-        gap: 2rem;
+        gap: var(--space-8);
+        align-items: center;
       }
       
       .nav-links a {
-        color: var(--text-primary);
+        color: rgb(var(--color-gray-700));
         text-decoration: none;
         font-weight: 500;
-        transition: color 0.2s;
+        font-size: var(--font-size-sm);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--border-radius);
+        transition: all var(--transition-fast);
+        position: relative;
       }
       
       .nav-links a:hover {
-        color: var(--primary-color);
+        color: rgb(var(--color-primary));
+        background-color: rgb(var(--color-gray-100));
       }
       
-      /* Main */
+      .nav-links a[aria-current="page"] {
+        color: rgb(var(--color-primary));
+        background-color: rgb(var(--color-primary) / 0.1);
+        font-weight: 600;
+      }
+      
+      /* Main Content */
       .main {
         flex: 1;
-        padding: 3rem 0;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        min-height: calc(100vh - 200px);
+        padding: var(--space-12) 0;
+        min-height: calc(100vh - var(--header-height) - 120px);
       }
       
       .main > * {
         width: 100%;
-        max-width: 1200px;
+        max-width: var(--container-max-width);
         margin: 0 auto;
-        padding: 0 3rem;
+        padding: 0 var(--space-12);
       }
       
       /* Footer */
       .footer {
-        background-color: var(--bg-secondary);
-        border-top: 1px solid var(--border-color);
-        padding: 2rem 0;
+        background-color: rgb(var(--color-gray-100));
+        border-top: 1px solid rgb(var(--color-gray-200));
+        padding: var(--space-8) 0;
         margin-top: auto;
-      }
-      
-      .footer .container {
-        max-width: 1200px;
-        padding: 0 3rem;
       }
       
       .footer p {
         text-align: center;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
+        color: rgb(var(--color-gray-600));
+        font-size: var(--font-size-sm);
       }
       
-      /* Responsive */
+      /* Responsive Design */
+      @media (max-width: 1024px) {
+        .container,
+        .main > * {
+          padding: 0 var(--space-8);
+        }
+      }
+      
       @media (max-width: 768px) {
-        .nav {
-          flex-direction: column;
-          gap: 1rem;
-          padding: 1rem 2rem;
+        :root {
+          --header-height: 70px;
+        }
+        
+        .nav-toggle {
+          display: block;
         }
         
         .nav-links {
-          gap: 1rem;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background-color: white;
+          flex-direction: column;
+          gap: 0;
+          padding: var(--space-4) 0;
+          box-shadow: var(--shadow-md);
+          border-top: 1px solid rgb(var(--color-gray-200));
+          transform: translateY(-100%);
+          opacity: 0;
+          visibility: hidden;
+          transition: all var(--transition-normal);
+        }
+        
+        .nav-links[data-visible="true"] {
+          transform: translateY(0);
+          opacity: 1;
+          visibility: visible;
+        }
+        
+        .nav-links li {
+          width: 100%;
+        }
+        
+        .nav-links a {
+          display: block;
+          padding: var(--space-3) var(--space-8);
+          border-radius: 0;
+          text-align: center;
         }
         
         .container,
-        .footer .container,
-        .main > * {
-          padding: 0 2rem;
+        .main > *,
+        .footer .container {
+          padding: 0 var(--space-6);
         }
         
         .main {
-          padding: 2rem 0;
-          min-height: calc(100vh - 180px);
+          padding: var(--space-8) 0;
+        }
+        
+        .logo h1 {
+          font-size: var(--font-size-xl);
         }
       }
       
       @media (max-width: 480px) {
-        .nav {
-          padding: 1rem 0.5rem;
-        }
-        
         .container,
-        .footer .container,
-        .main > * {
-          padding: 0 1rem;
+        .main > *,
+        .footer .container {
+          padding: 0 var(--space-4);
         }
         
         .main {
-          padding: 1.5rem 0;
+          padding: var(--space-6) 0;
         }
         
         .logo h1 {
-          font-size: 1.25rem;
+          font-size: var(--font-size-lg);
+        }
+        
+        .nav-links a {
+          padding: var(--space-4) var(--space-6);
+          font-size: var(--font-size-base);
+        }
+      }
+      
+      /* Print Styles */
+      @media print {
+        .header,
+        .footer,
+        .nav-toggle {
+          display: none;
+        }
+        
+        .main {
+          padding: 0;
+        }
+        
+        body {
+          background: white;
+          color: black;
         }
       }
     </style>
+    
+    <script>
+      // Mobile navigation toggle
+      document.addEventListener('DOMContentLoaded', () => {
+        const navToggle = document.querySelector('.nav-toggle');
+        const navMenu = document.querySelector('.nav-links');
+        
+        if (navToggle && navMenu) {
+          navToggle.addEventListener('click', () => {
+            const isExpanded = navToggle.getAttribute('aria-expanded') === 'true';
+            navToggle.setAttribute('aria-expanded', (!isExpanded).toString());
+            navMenu.setAttribute('data-visible', (!isExpanded).toString());
+          });
+        }
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!navToggle?.contains(e.target as Node) && !navMenu?.contains(e.target as Node)) {
+            navToggle?.setAttribute('aria-expanded', 'false');
+            navMenu?.setAttribute('data-visible', 'false');
+          }
+        });
+        
+        // Close mobile menu on escape key
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            navToggle?.setAttribute('aria-expanded', 'false');
+            navMenu?.setAttribute('data-visible', 'false');
+          }
+        });
+      });
+    </script>
   </body>
 </html>
