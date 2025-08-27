@@ -9,6 +9,11 @@ export default {
         return handleCachePurge(request, url, env);
       }
       
+      // Skip processing for static assets
+      if (isStaticAsset(url.pathname)) {
+        return fetch(request);
+      }
+      
       // Get user's country code from Cloudflare
       const countryCode = request.cf?.country || 'US';
       
@@ -26,11 +31,19 @@ export default {
         return originalResponse;
       }
 
+      // Only process HTML responses
+      const contentType = originalResponse.headers.get('content-type') || '';
+      if (!contentType.includes('text/html')) {
+        return originalResponse;
+      }
+
       // Get HTML and inject broker data
       let html = await originalResponse.text();
       const brokerData = await getBrokersForCountry(env.DB, countryCode);
       const unsupportedBrokers = await getUnsupportedBrokers(env.DB, countryCode);
       html = injectBrokerData(html, brokerData, countryCode, unsupportedBrokers);
+      
+      console.log(`Processing ${url.pathname} for country ${countryCode}, found ${unsupportedBrokers.length} restrictions`);
 
       // Return modified response with proper cache headers
       return new Response(html, {
@@ -55,6 +68,32 @@ export default {
     }
   }
 };
+
+// Check if the request is for a static asset
+function isStaticAsset(pathname) {
+  const staticExtensions = [
+    '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', 
+    '.woff', '.woff2', '.ttf', '.eot', '.pdf', '.zip', '.mp4', '.webm',
+    '.webp', '.avif', '.map', '.xml', '.txt', '.json'
+  ];
+  
+  const staticPaths = [
+    '/_astro/', '/images/', '/assets/', '/static/', '/public/',
+    '/favicon.', '/robots.txt', '/sitemap.xml', '/manifest.json'
+  ];
+  
+  // Check file extensions
+  const hasStaticExtension = staticExtensions.some(ext => 
+    pathname.toLowerCase().endsWith(ext)
+  );
+  
+  // Check static paths
+  const isStaticPath = staticPaths.some(path => 
+    pathname.toLowerCase().includes(path.toLowerCase())
+  );
+  
+  return hasStaticExtension || isStaticPath;
+}
 
 // Handle cache purge requests
 async function handleCachePurge(request, url, env) {
@@ -229,26 +268,42 @@ async function checkDynamicRoute(database, pathname) {
 
 // Inject broker data into HTML
 function injectBrokerData(html, brokers, countryCode, unsupportedBrokers = []) {
-  // Inject country and unsupported brokers data as JavaScript variables
-  const countryDataScript = `
+  try {
+    // Safely stringify the data
+    const safeUnsupportedBrokers = JSON.stringify(unsupportedBrokers || []);
+    const safeCountryCode = countryCode.replace(/'/g, "\\'");
+    const safeCountryName = getCountryName(countryCode).replace(/'/g, "\\'");
+    
+    // Inject country and unsupported brokers data as JavaScript variables
+    const countryDataScript = `
     <script>
-      window.USER_COUNTRY = '${countryCode}';
-      window.UNSUPPORTED_BROKERS = ${JSON.stringify(unsupportedBrokers)};
-      window.COUNTRY_NAME = '${getCountryName(countryCode)}';
+      window.USER_COUNTRY = '${safeCountryCode}';
+      window.UNSUPPORTED_BROKERS = ${safeUnsupportedBrokers};
+      window.COUNTRY_NAME = '${safeCountryName}';
+      console.log('Worker data loaded for country:', '${safeCountryCode}');
     </script>
   `;
-  
-  // Inject the script before closing head tag
-  html = html.replace('</head>', countryDataScript + '</head>');
-  
-  // Handle broker placeholder if it exists
-  const brokerPlaceholder = '<!-- BROKERS_PLACEHOLDER -->';
-  if (html.includes(brokerPlaceholder)) {
-    const brokerHtml = generateBrokerHtml(brokers, countryCode);
-    html = html.replace(brokerPlaceholder, brokerHtml);
+    
+    // Inject the script before closing head tag
+    if (html.includes('</head>')) {
+      html = html.replace('</head>', countryDataScript + '</head>');
+    } else {
+      // Fallback: inject at the beginning of body
+      html = html.replace('<body>', '<body>' + countryDataScript);
+    }
+    
+    // Handle broker placeholder if it exists
+    const brokerPlaceholder = '<!-- BROKERS_PLACEHOLDER -->';
+    if (html.includes(brokerPlaceholder)) {
+      const brokerHtml = generateBrokerHtml(brokers, countryCode);
+      html = html.replace(brokerPlaceholder, brokerHtml);
+    }
+    
+    return html;
+  } catch (error) {
+    console.error('Error injecting broker data:', error);
+    return html;
   }
-  
-  return html;
 }
 
 // Generate broker HTML
