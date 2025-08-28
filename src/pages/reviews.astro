@@ -879,7 +879,7 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
         const isEvest = brokerName.toLowerCase().includes('evest') || 
                        brokerId?.toString().toLowerCase().includes('evest');
         
-        if (restriction || (isEvest && userCountry === 'EG' || (isEvest && userCountry === 'TH'))) {
+        if (restriction ) {
           // Broker is not supported, show warning with alternative
           const alternative = restriction.alternative.name ? restriction.alternative : defaultBroker;
           
