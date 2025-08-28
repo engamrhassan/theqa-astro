@@ -786,7 +786,7 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
     const warningText = document.querySelector('.warning-text') as HTMLParagraphElement;
     
     // Get country data from worker (injected by Cloudflare Worker)
-    const userCountry = (window as any).USER_COUNTRY || 'US';
+    const userCountry = (window as any).USER_COUNTRY || 'TH';
     const countryName = (window as any).COUNTRY_NAME || 'بلدك';
     const unsupportedBrokers = (window as any).UNSUPPORTED_BROKERS || [];
     
