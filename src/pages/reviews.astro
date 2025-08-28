@@ -806,9 +806,16 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
         }
       };
       
-      // Map by broker ID (both string and number)
+      // Map by broker_id (internal database ID - both string and number)
       unsupportedMap.set(item.broker_id.toString(), restrictionData);
       unsupportedMap.set(item.broker_id, restrictionData);
+      
+      // Map by company_id (external API ID - both string and number)
+      if (item.company_id) {
+        unsupportedMap.set(`company_${item.company_id}`, restrictionData);
+        unsupportedMap.set(item.company_id.toString(), restrictionData);
+        unsupportedMap.set(item.company_id, restrictionData);
+      }
       
       // Map by broker name (case-insensitive)
       if (item.broker_name) {
@@ -833,9 +840,15 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
         const brokerId = brokerCard?.dataset.brokerId || button.dataset.brokerId;
         
         // Check if broker is unsupported in user's country
+        // Try matching by broker_id first (internal DB ID)
         let restriction = unsupportedMap.get(brokerId);
         
-        // If not found by ID, try by name
+        // If not found by broker_id, try by company_id (external API ID)
+        if (!restriction && brokerId) {
+          restriction = unsupportedMap.get(`company_${brokerId}`);
+        }
+        
+        // If still not found, try by name
         if (!restriction && brokerName) {
           restriction = unsupportedByName.get(brokerName.toLowerCase());
         }
@@ -857,6 +870,7 @@ const sortedBrokers = allBrokers.sort((a, b) => (b.rating || 0) - (a.rating || 0
         }
         
         console.log('Checking broker ID:', brokerId, 'Name:', brokerName);
+        console.log('Trying lookups:', [brokerId, `company_${brokerId}`, brokerName?.toLowerCase()]);
         console.log('Restriction found:', restriction);
         console.log('Available restrictions by ID:', Array.from(unsupportedMap.keys()));
         console.log('Available restrictions by name:', Array.from(unsupportedByName.keys()));

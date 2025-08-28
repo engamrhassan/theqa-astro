@@ -171,8 +171,8 @@ async function getBrokersForCountry(database, countryCode) {
 async function getUnsupportedBrokers(database, countryCode) {
   try {
     const query = `
-      SELECT uc.broker_id, uc.restriction_type, uc.reason, 
-             b.name as broker_name, b.logo as broker_logo,
+      SELECT uc.broker_id, uc.company_id, uc.restriction_type, uc.reason, 
+             b.name as broker_name, b.logo as broker_logo, b.company_id as broker_company_id,
              alt.id as alternative_id, alt.name as alternative_name, 
              alt.logo as alternative_logo, alt.website_url as alternative_url
       FROM unsupported_countries uc

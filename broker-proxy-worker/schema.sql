@@ -8,6 +8,7 @@ CREATE TABLE brokers (
     logo TEXT,
     rating REAL DEFAULT 0,
     min_deposit INTEGER DEFAULT 0,
+    company_id INTEGER,
     description TEXT,
     website_url TEXT,
     is_active BOOLEAN DEFAULT 1,
@@ -42,6 +43,7 @@ CREATE TABLE dynamic_routes (
 CREATE TABLE unsupported_countries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     broker_id INTEGER NOT NULL,
+    company_id INTEGER,
     country_code TEXT NOT NULL,
     country_name TEXT,
     restriction_type TEXT DEFAULT 'blocked', -- 'blocked', 'restricted', 'unavailable'
