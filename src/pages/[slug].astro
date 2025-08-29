@@ -598,3 +598,320 @@ try {
     }
   }
 </style>
+
+<script>
+  // Import the BeginnerBrokerTable component HTML
+  const beginnerTableHTML = `
+    <div class="broker-table-wrapper">
+      <div class="broker-table">
+        <div class="table-header">
+          <div class="header-cell company-header">الشركة</div>
+          <div class="header-cell deposit-header">أقل مبلغ للإيداع</div>
+          <div class="header-cell rating-header">التقييم</div>
+        </div>
+
+        <div class="broker-row">
+          <div class="broker-cell company-cell">
+            <div class="company-info">
+              <div class="company-logo" style="background: #1e40af">
+                <span class="logo-text">Evest</span>
+              </div>
+              <span class="company-name">Evest</span>
+            </div>
+          </div>
+          <div class="broker-cell deposit-cell">
+            <span class="deposit-amount">50</span>
+          </div>
+          <div class="broker-cell rating-cell">
+            <span class="rating-value">4.5/5</span>
+          </div>
+        </div>
+
+        <div class="broker-row">
+          <div class="broker-cell company-cell">
+            <div class="company-info">
+              <div class="company-logo" style="background: #4f46e5">
+                <span class="logo-text">AvaTrade</span>
+              </div>
+              <span class="company-name">AvaTrade</span>
+            </div>
+          </div>
+          <div class="broker-cell deposit-cell">
+            <span class="deposit-amount">100</span>
+          </div>
+          <div class="broker-cell rating-cell">
+            <span class="rating-value">4/5</span>
+          </div>
+        </div>
+
+        <div class="broker-row">
+          <div class="broker-cell company-cell">
+            <div class="company-info">
+              <div class="company-logo" style="background: #dc2626">
+                <span class="logo-text">XTB</span>
+              </div>
+              <span class="company-name">XTB</span>
+            </div>
+          </div>
+          <div class="broker-cell deposit-cell">
+            <span class="deposit-amount">100</span>
+          </div>
+          <div class="broker-cell rating-cell">
+            <span class="rating-value">4/5</span>
+          </div>
+        </div>
+
+        <div class="broker-row">
+          <div class="broker-cell company-cell">
+            <div class="company-info">
+              <div class="company-logo" style="background: #fbbf24; color: #1f2937">
+                <span class="logo-text">Exness</span>
+              </div>
+              <span class="company-name">Exness</span>
+            </div>
+          </div>
+          <div class="broker-cell deposit-cell">
+            <span class="deposit-amount">10</span>
+          </div>
+          <div class="broker-cell rating-cell">
+            <span class="rating-value">4.5/5</span>
+          </div>
+        </div>
+
+        <div class="table-footer">
+          <div class="footer-content">
+            <span class="footer-icon">⚡</span>
+            <span class="footer-text">أفضل شركات التداول للمبتدئين</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // BeginnerBrokerTable CSS styles
+  const beginnerTableStyles = `
+    <style id="beginner-table-styles">
+      .broker-table-wrapper {
+        width: 100%;
+        max-width: 800px;
+        margin: 2rem auto;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        background: white;
+      }
+
+      .broker-table {
+        width: 100%;
+      }
+
+      .table-header {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        background: #e5e7eb;
+        padding: 16px 20px;
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+      }
+
+      .header-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      .company-header {
+        justify-content: flex-end;
+      }
+
+      .broker-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        padding: 20px;
+        border-bottom: 1px solid #f3f4f6;
+        align-items: center;
+      }
+
+      .broker-row:hover {
+        background: #f8fafc;
+      }
+
+      .broker-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .company-cell {
+        justify-content: flex-end;
+      }
+
+      .company-info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .company-name {
+        font-weight: 600;
+        font-size: 16px;
+        color: #2563eb;
+      }
+
+      .company-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 10px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .logo-text {
+        line-height: 1;
+      }
+
+      .deposit-amount {
+        font-weight: 700;
+        font-size: 18px;
+        color: #111827;
+      }
+
+      .rating-value {
+        font-weight: 600;
+        font-size: 16px;
+        color: #2563eb;
+      }
+
+      .table-footer {
+        background: #e5e7eb;
+        padding: 16px 20px;
+      }
+
+      .footer-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .footer-icon {
+        font-size: 16px;
+      }
+
+      .footer-text {
+        font-weight: 600;
+        color: #374151;
+        font-size: 14px;
+      }
+
+      @media (max-width: 768px) {
+        .broker-table-wrapper {
+          margin: 1rem;
+          border-radius: 12px;
+        }
+
+        .table-header,
+        .broker-row {
+          padding: 12px 16px;
+        }
+
+        .company-info {
+          gap: 12px;
+        }
+
+        .company-name {
+          font-size: 14px;
+        }
+
+        .company-logo {
+          width: 40px;
+          height: 40px;
+          font-size: 9px;
+        }
+
+        .deposit-amount {
+          font-size: 16px;
+        }
+
+        .rating-value {
+          font-size: 14px;
+        }
+
+        .header-cell,
+        .footer-text {
+          font-size: 12px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .table-header,
+        .broker-row {
+          grid-template-columns: 1.8fr 1fr 1fr;
+          padding: 10px 12px;
+        }
+
+        .company-info {
+          gap: 8px;
+        }
+
+        .company-name {
+          font-size: 13px;
+        }
+
+        .company-logo {
+          width: 36px;
+          height: 36px;
+          font-size: 8px;
+        }
+
+        .deposit-amount {
+          font-size: 15px;
+        }
+
+        .rating-value {
+          font-size: 13px;
+        }
+      }
+    </style>
+  `;
+
+  // Function to replace placeholders in content
+  function replacePlaceholders() {
+    const contentBody = document.querySelector('.content-body');
+    if (!contentBody) return;
+
+    let content = contentBody.innerHTML;
+    
+    // Replace [beginner-57] placeholder
+    if (content.includes('[beginner-57]')) {
+      // Add styles if not already added
+      if (!document.getElementById('beginner-table-styles')) {
+        document.head.insertAdjacentHTML('beforeend', beginnerTableStyles);
+      }
+      
+      // Replace the placeholder with the table HTML
+      content = content.replace(/\[beginner-57\]/g, beginnerTableHTML);
+      contentBody.innerHTML = content;
+      
+      console.log('Replaced [beginner-57] placeholder with BeginnerBrokerTable component');
+    }
+  }
+
+  // Replace placeholders when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', replacePlaceholders);
+  } else {
+    replacePlaceholders();
+  }
+
+  // Also run after a short delay to handle dynamic content
+  setTimeout(replacePlaceholders, 500);
+</script>
