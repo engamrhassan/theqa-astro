@@ -316,31 +316,64 @@ function generateBrokerHtml(brokers, countryCode) {
     `;
   }
 
-  let html = '<section class="brokers-section"><div class="companies-grid">';
+  let html = '<div class="companies-grid">';
   
   brokers.forEach((broker, index) => {
     const minDeposit = broker.min_deposit || 0;
     const rating = broker.rating || 0;
     const description = broker.description || 'وسيط موثوق للتداول';
+    const logoColor = getBrokerLogoColor(broker.name);
+    
+    // Generate star icons
+    const starsHtml = Array(4).fill().map(() => `
+      <svg class="company-star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    `).join('');
     
     html += `
       <article class="company-card" data-position="${index + 1}" data-broker-id="${broker.id}">
-        <div class="company-content">
-          ${broker.logo ? `<img src="${broker.logo}" alt="${broker.name} logo" class="company-logo" style="max-width:80px;max-height:80px;display:block;margin:0 auto 1rem;" loading="lazy" />` : ''}
-          <h3>${broker.name}</h3>
-          <p>${description}</p>
-          <div class="company-features">
-            <div class="feature">الحد الأدنى للإيداع: $${minDeposit}</div>
-            <div class="feature">التقييم: ${'★'.repeat(Math.floor(rating))} (${rating})</div>
-            <div class="feature">الترتيب: #${index + 1} في ${getCountryName(countryCode)}</div>
+        <div class="company-logo">
+          <div class="company-logo-container" style="background: ${logoColor};">
+            <span class="broker-name">${broker.name}</span>
           </div>
         </div>
+        <div class="company-info">
+          <div class="company-rating">
+            <div class="company-stars">
+              ${starsHtml}
+            </div>
+          </div>
+          <div class="company-license">
+            <div class="company-license-label">التراخيص</div>
+            <div class="company-license-value">FCA</div>
+          </div>
+          <div class="company-details">
+            <div class="company-min-deposit">أقل مبلغ للإيداع</div>
+            <div class="company-deposit-amount">${minDeposit}</div>
+          </div>
+        </div>
+        <button class="company-open-account-btn">فتح حساب</button>
       </article>
     `;
   });
   
-  html += '</div></section>';
+  html += '</div>';
   return html;
+}
+
+// Get broker logo color based on name
+function getBrokerLogoColor(name) {
+  const colors = {
+    'exness': '#fbbf24',
+    'evest': '#1e40af', 
+    'xtb': '#dc2626',
+    'avatrade': '#4f46e5',
+    'default': '#6366f1'
+  };
+  
+  const lowerName = name.toLowerCase();
+  return colors[lowerName] || colors.default;
 }
 
 // Get country name in Arabic
