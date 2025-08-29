@@ -16,91 +16,99 @@ const {
     <!-- BEGINNER_BROKERS_PLACEHOLDER -->
     <div class="fallback-beginner-table">
       <div class="broker-table-wrapper">
-        <div class="broker-table">
+        <table class="broker-table">
           <!-- Header -->
-          <div class="table-header">
-            <div class="header-cell company-header">الشركة</div>
-            <div class="header-cell deposit-header">أقل مبلغ للإيداع</div>
-            <div class="header-cell rating-header">التقييم</div>
-          </div>
+          <thead>
+            <tr class="table-header">
+              <th class="header-cell company-header">الشركة</th>
+              <th class="header-cell deposit-header">أقل مبلغ للإيداع</th>
+              <th class="header-cell rating-header">التقييم</th>
+            </tr>
+          </thead>
 
           <!-- Fallback Broker Rows -->
-          <div class="broker-row">
-            <div class="broker-cell company-cell">
-              <div class="company-info">
-                <div class="company-logo" style="background: #1e40af">
-                  <span class="logo-text">Evest</span>
+          <tbody>
+            <tr class="broker-row">
+              <td class="broker-cell company-cell">
+                <div class="company-info">
+                  <div class="company-logo" style="background: #1e40af">
+                    <span class="logo-text">Evest</span>
+                  </div>
+                  <span class="company-name">Evest</span>
                 </div>
-                <span class="company-name">Evest</span>
-              </div>
-            </div>
-            <div class="broker-cell deposit-cell">
-              <span class="deposit-amount">50</span>
-            </div>
-            <div class="broker-cell rating-cell">
-              <span class="rating-value">4.5/5</span>
-            </div>
-          </div>
+              </td>
+              <td class="broker-cell deposit-cell">
+                <span class="deposit-amount">50</span>
+              </td>
+              <td class="broker-cell rating-cell">
+                <span class="rating-value">4.5/5</span>
+              </td>
+            </tr>
 
-          <div class="broker-row">
-            <div class="broker-cell company-cell">
-              <div class="company-info">
-                <div class="company-logo" style="background: #4f46e5">
-                  <span class="logo-text">AvaTrade</span>
+            <tr class="broker-row">
+              <td class="broker-cell company-cell">
+                <div class="company-info">
+                  <div class="company-logo" style="background: #4f46e5">
+                    <span class="logo-text">AvaTrade</span>
+                  </div>
+                  <span class="company-name">AvaTrade</span>
                 </div>
-                <span class="company-name">AvaTrade</span>
-              </div>
-            </div>
-            <div class="broker-cell deposit-cell">
-              <span class="deposit-amount">100</span>
-            </div>
-            <div class="broker-cell rating-cell">
-              <span class="rating-value">4/5</span>
-            </div>
-          </div>
+              </td>
+              <td class="broker-cell deposit-cell">
+                <span class="deposit-amount">100</span>
+              </td>
+              <td class="broker-cell rating-cell">
+                <span class="rating-value">4/5</span>
+              </td>
+            </tr>
 
-          <div class="broker-row">
-            <div class="broker-cell company-cell">
-              <div class="company-info">
-                <div class="company-logo" style="background: #dc2626">
-                  <span class="logo-text">XTB</span>
+            <tr class="broker-row">
+              <td class="broker-cell company-cell">
+                <div class="company-info">
+                  <div class="company-logo" style="background: #dc2626">
+                    <span class="logo-text">XTB</span>
+                  </div>
+                  <span class="company-name">XTB</span>
                 </div>
-                <span class="company-name">XTB</span>
-              </div>
-            </div>
-            <div class="broker-cell deposit-cell">
-              <span class="deposit-amount">100</span>
-            </div>
-            <div class="broker-cell rating-cell">
-              <span class="rating-value">4/5</span>
-            </div>
-          </div>
+              </td>
+              <td class="broker-cell deposit-cell">
+                <span class="deposit-amount">100</span>
+              </td>
+              <td class="broker-cell rating-cell">
+                <span class="rating-value">4/5</span>
+              </td>
+            </tr>
 
-          <div class="broker-row">
-            <div class="broker-cell company-cell">
-              <div class="company-info">
-                <div class="company-logo" style="background: #fbbf24; color: #1f2937">
-                  <span class="logo-text">Exness</span>
+            <tr class="broker-row">
+              <td class="broker-cell company-cell">
+                <div class="company-info">
+                  <div class="company-logo" style="background: #fbbf24; color: #1f2937">
+                    <span class="logo-text">Exness</span>
+                  </div>
+                  <span class="company-name">Exness</span>
                 </div>
-                <span class="company-name">Exness</span>
-              </div>
-            </div>
-            <div class="broker-cell deposit-cell">
-              <span class="deposit-amount">10</span>
-            </div>
-            <div class="broker-cell rating-cell">
-              <span class="rating-value">4.5/5</span>
-            </div>
-          </div>
+              </td>
+              <td class="broker-cell deposit-cell">
+                <span class="deposit-amount">10</span>
+              </td>
+              <td class="broker-cell rating-cell">
+                <span class="rating-value">4.5/5</span>
+              </td>
+            </tr>
+          </tbody>
 
           <!-- Footer -->
-          <div class="table-footer">
-            <div class="footer-content">
-              <span class="footer-icon">⚡</span>
-              <span class="footer-text">{title}</span>
-            </div>
-          </div>
-        </div>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="table-footer">
+                <div class="footer-content">
+                  <span class="footer-icon">⚡</span>
+                  <span class="footer-text">{title}</span>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   </div>
@@ -119,52 +127,48 @@ const {
 
   .broker-table {
     width: 100%;
+    border-collapse: collapse;
   }
 
   /* Header */
   .table-header {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
     background: #e5e7eb;
+  }
+
+  .header-cell {
     padding: 16px 20px;
     font-weight: 600;
     color: #374151;
     font-size: 14px;
-  }
-
-  .header-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     text-align: center;
+    border: none;
   }
 
   .company-header {
-    justify-content: flex-end;
+    text-align: right;
+    width: 40%;
+  }
+
+  .deposit-header,
+  .rating-header {
+    width: 30%;
   }
 
   /* Broker Rows */
-  .broker-row {
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr;
-    padding: 20px;
-    border-bottom: 1px solid #f3f4f6;
-    align-items: center;
-  }
-
   .broker-row:hover {
     background: #f8fafc;
   }
 
   .broker-cell {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 20px;
+    border-bottom: 1px solid #f3f4f6;
+    text-align: center;
+    vertical-align: middle;
   }
 
   /* Company Cell */
   .company-cell {
-    justify-content: flex-end;
+    text-align: right;
   }
 
   .company-info {

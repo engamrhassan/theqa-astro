@@ -1,134 +1,128 @@
-// Cloudflare Worker for Dynamic Broker Sorting
-export default {
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// worker.js
+var worker_default = {
   async fetch(request, env, ctx) {
     try {
       const url = new URL(request.url);
-      
-      // Cache purge endpoint (for manual clearing when needed)
-      if (url.pathname === '/__purge-cache' && request.method === 'POST') {
+      if (url.pathname === "/__purge-cache" && request.method === "POST") {
         return handleCachePurge(request, url, env);
       }
-      
-      // Skip processing for static assets
       if (isStaticAsset(url.pathname)) {
         return fetch(request);
       }
-      
-      // Get user's country code from Cloudflare
-      const countryCode = request.cf?.country || 'US';
-      
-      // Check if this route should get dynamic broker data
+      const countryCode = request.cf?.country || "US";
       const shouldProcess = await checkDynamicRoute(env.DB, url.pathname);
-      
       if (!shouldProcess) {
-        // For other pages, pass through to origin
         return fetch(request);
       }
-
-      // Fetch original page from Astro
       const originalResponse = await fetch(request);
       if (!originalResponse.ok) {
         return originalResponse;
       }
-
-      // Only process HTML responses
-      const contentType = originalResponse.headers.get('content-type') || '';
-      if (!contentType.includes('text/html')) {
+      const contentType = originalResponse.headers.get("content-type") || "";
+      if (!contentType.includes("text/html")) {
         return originalResponse;
       }
-
-      // Get HTML and inject broker data
       let html = await originalResponse.text();
       const brokerData = await getBrokersForCountry(env.DB, countryCode);
       const unsupportedBrokers = await getUnsupportedBrokers(env.DB, countryCode);
       html = injectBrokerData(html, brokerData, countryCode, unsupportedBrokers);
-      
       console.log(`Processing ${url.pathname} for country ${countryCode}, found ${unsupportedBrokers.length} restrictions`);
-
-      // Return modified response with proper cache headers
       return new Response(html, {
         status: originalResponse.status,
         statusText: originalResponse.statusText,
         headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-          'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=300', // 1 hour cache
-          'X-Country-Code': countryCode,
-          'X-Broker-Count': brokerData.length.toString(),
-          'X-Unsupported-Count': unsupportedBrokers.length.toString(),
-          'Vary': 'CF-IPCountry', // Cache varies by country
-          'X-Frame-Options': 'SAMEORIGIN',
-          'X-Content-Type-Options': 'nosniff'
+          "Content-Type": "text/html; charset=utf-8",
+          "Cache-Control": "public, max-age=3600, s-maxage=3600, stale-while-revalidate=300",
+          // 1 hour cache
+          "X-Country-Code": countryCode,
+          "X-Broker-Count": brokerData.length.toString(),
+          "X-Unsupported-Count": unsupportedBrokers.length.toString(),
+          "Vary": "CF-IPCountry",
+          // Cache varies by country
+          "X-Frame-Options": "SAMEORIGIN",
+          "X-Content-Type-Options": "nosniff"
         }
       });
-
     } catch (error) {
-      console.error('Worker error:', error);
-      // On error, pass through to origin
+      console.error("Worker error:", error);
       return fetch(request);
     }
   }
 };
-
-// Check if the request is for a static asset
 function isStaticAsset(pathname) {
   const staticExtensions = [
-    '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', 
-    '.woff', '.woff2', '.ttf', '.eot', '.pdf', '.zip', '.mp4', '.webm',
-    '.webp', '.avif', '.map', '.xml', '.txt', '.json'
+    ".css",
+    ".js",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".svg",
+    ".ico",
+    ".woff",
+    ".woff2",
+    ".ttf",
+    ".eot",
+    ".pdf",
+    ".zip",
+    ".mp4",
+    ".webm",
+    ".webp",
+    ".avif",
+    ".map",
+    ".xml",
+    ".txt",
+    ".json"
   ];
-  
   const staticPaths = [
-    '/_astro/', '/images/', '/assets/', '/static/', '/public/',
-    '/favicon.', '/robots.txt', '/sitemap.xml', '/manifest.json'
+    "/_astro/",
+    "/images/",
+    "/assets/",
+    "/static/",
+    "/public/",
+    "/favicon.",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/manifest.json"
   ];
-  
-  // Check file extensions
-  const hasStaticExtension = staticExtensions.some(ext => 
-    pathname.toLowerCase().endsWith(ext)
+  const hasStaticExtension = staticExtensions.some(
+    (ext) => pathname.toLowerCase().endsWith(ext)
   );
-  
-  // Check static paths
-  const isStaticPath = staticPaths.some(path => 
-    pathname.toLowerCase().includes(path.toLowerCase())
+  const isStaticPath = staticPaths.some(
+    (path) => pathname.toLowerCase().includes(path.toLowerCase())
   );
-  
   return hasStaticExtension || isStaticPath;
 }
-
-// Handle cache purge requests
+__name(isStaticAsset, "isStaticAsset");
 async function handleCachePurge(request, url, env) {
   try {
-    // Simple auth check (add your own auth token)
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${env.PURGE_TOKEN || 'your-secret-token'}`) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader !== `Bearer ${env.PURGE_TOKEN || "your-secret-token"}`) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { "Content-Type": "application/json" }
       });
     }
-
-    // Since we're using Cloudflare's edge cache, we can't purge it from the worker
-    // But we can return a success and rely on the API call from Laravel
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Cache purge initiated. Use Cloudflare API for edge cache purge.' 
+    return new Response(JSON.stringify({
+      success: true,
+      message: "Cache purge initiated. Use Cloudflare API for edge cache purge."
     }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { "Content-Type": "application/json" }
     });
-    
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { 
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { "Content-Type": "application/json" }
     });
   }
 }
-
-// Get brokers for specific country from database
+__name(handleCachePurge, "handleCachePurge");
 async function getBrokersForCountry(database, countryCode) {
   try {
-    // Query for country-specific brokers with restriction info
     const query = `
       SELECT b.id, b.name, b.logo, b.rating, b.min_deposit, b.description, 
              cs.sort_order, uc.restriction_type, uc.reason, uc.alternative_broker_id
@@ -139,14 +133,10 @@ async function getBrokersForCountry(database, countryCode) {
       ORDER BY cs.sort_order ASC
       LIMIT 6
     `;
-    
     const result = await database.prepare(query).bind(countryCode, countryCode).all();
-    
     if (result.results && result.results.length > 0) {
       return result.results;
     }
-    
-    // Fallback to default brokers if no country-specific data
     console.log(`No data for ${countryCode}, using defaults`);
     const defaultQuery = `
       SELECT b.id, b.name, b.logo, b.rating, b.min_deposit, b.description, 
@@ -157,17 +147,14 @@ async function getBrokersForCountry(database, countryCode) {
       ORDER BY b.default_sort_order ASC
       LIMIT 4
     `;
-    
     const defaultResult = await database.prepare(defaultQuery).bind(countryCode).all();
     return defaultResult.results || getHardcodedBrokers();
-    
   } catch (error) {
     console.error(`Database error for ${countryCode}:`, error);
     return getHardcodedBrokers();
   }
 }
-
-// Get unsupported brokers and their alternatives for a country
+__name(getBrokersForCountry, "getBrokersForCountry");
 async function getUnsupportedBrokers(database, countryCode) {
   try {
     const query = `
@@ -180,68 +167,59 @@ async function getUnsupportedBrokers(database, countryCode) {
       LEFT JOIN brokers alt ON uc.alternative_broker_id = alt.id
       WHERE uc.country_code = ? AND uc.is_active = 1 AND b.is_active = 1
     `;
-    
     const result = await database.prepare(query).bind(countryCode).all();
     return result.results || [];
-    
   } catch (error) {
     console.error(`Error fetching unsupported brokers for ${countryCode}:`, error);
     return [];
   }
 }
-
-// Hardcoded fallback brokers (when DB is unavailable)
+__name(getUnsupportedBrokers, "getUnsupportedBrokers");
 function getHardcodedBrokers() {
   return [
-    { 
-      id: 1, 
-      name: 'eVest', 
-      rating: 4.2, 
-      min_deposit: 250, 
-      description: 'وسيط متعدد التنظيم مع فروق أسعار تنافسية',
+    {
+      id: 1,
+      name: "eVest",
+      rating: 4.2,
+      min_deposit: 250,
+      description: "\u0648\u0633\u064A\u0637 \u0645\u062A\u0639\u062F\u062F \u0627\u0644\u062A\u0646\u0638\u064A\u0645 \u0645\u0639 \u0641\u0631\u0648\u0642 \u0623\u0633\u0639\u0627\u0631 \u062A\u0646\u0627\u0641\u0633\u064A\u0629",
       sort_order: 1
     },
-    { 
-      id: 2, 
-      name: 'Exness', 
-      rating: 4.5, 
-      min_deposit: 10, 
-      description: 'وسيط شهير مع حد أدنى منخفض للإيداع',
+    {
+      id: 2,
+      name: "Exness",
+      rating: 4.5,
+      min_deposit: 10,
+      description: "\u0648\u0633\u064A\u0637 \u0634\u0647\u064A\u0631 \u0645\u0639 \u062D\u062F \u0623\u062F\u0646\u0649 \u0645\u0646\u062E\u0641\u0636 \u0644\u0644\u0625\u064A\u062F\u0627\u0639",
       sort_order: 2
     },
-    { 
-      id: 3, 
-      name: 'AvaTrade', 
-      rating: 4.1, 
-      min_deposit: 100, 
-      description: 'وسيط راسخ مع تنظيم قوي',
+    {
+      id: 3,
+      name: "AvaTrade",
+      rating: 4.1,
+      min_deposit: 100,
+      description: "\u0648\u0633\u064A\u0637 \u0631\u0627\u0633\u062E \u0645\u0639 \u062A\u0646\u0638\u064A\u0645 \u0642\u0648\u064A",
       sort_order: 3
     }
   ];
 }
-
-// Check if route should get dynamic broker data
+__name(getHardcodedBrokers, "getHardcodedBrokers");
 async function checkDynamicRoute(database, pathname) {
   try {
     const decodedPath = decodeURIComponent(pathname);
-    
-    // Quick check for common broker routes
     const commonRoutes = [
-      'شركات-تداول-مرخصة-في-السعودية',
-      'منصات-تداول-العملات-الرقمية-في-الإمارات',
-      'reviews',
-      'brokers',
-      'trading-companies',
-      'forex-brokers'
+      "\u0634\u0631\u0643\u0627\u062A-\u062A\u062F\u0627\u0648\u0644-\u0645\u0631\u062E\u0635\u0629-\u0641\u064A-\u0627\u0644\u0633\u0639\u0648\u062F\u064A\u0629",
+      "\u0645\u0646\u0635\u0627\u062A-\u062A\u062F\u0627\u0648\u0644-\u0627\u0644\u0639\u0645\u0644\u0627\u062A-\u0627\u0644\u0631\u0642\u0645\u064A\u0629-\u0641\u064A-\u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062A",
+      "reviews",
+      "brokers",
+      "trading-companies",
+      "forex-brokers"
     ];
-    
     for (const route of commonRoutes) {
       if (decodedPath.includes(route)) {
         return true;
       }
     }
-    
-    // Check database for additional routes
     const query = `
       SELECT COUNT(*) as count
       FROM dynamic_routes
@@ -251,99 +229,73 @@ async function checkDynamicRoute(database, pathname) {
       )
       LIMIT 1
     `;
-    
     const result = await database.prepare(query).bind(decodedPath, decodedPath).first();
     return result?.count > 0;
-    
   } catch (error) {
-    console.error('Route check error:', error);
-    // Fallback to basic pattern matching
+    console.error("Route check error:", error);
     const path = decodeURIComponent(pathname).toLowerCase();
-    return path.includes('شركات-تداول') || 
-           path.includes('منصات-تداول') ||
-           path.includes('broker') ||
-           path.includes('trading');
+    return path.includes("\u0634\u0631\u0643\u0627\u062A-\u062A\u062F\u0627\u0648\u0644") || path.includes("\u0645\u0646\u0635\u0627\u062A-\u062A\u062F\u0627\u0648\u0644") || path.includes("broker") || path.includes("trading");
   }
 }
-
-// Inject broker data into HTML
+__name(checkDynamicRoute, "checkDynamicRoute");
 function injectBrokerData(html, brokers, countryCode, unsupportedBrokers = []) {
   try {
-    // Safely stringify the data
     const safeUnsupportedBrokers = JSON.stringify(unsupportedBrokers || []);
     const safeCountryCode = countryCode.replace(/'/g, "\\'");
     const safeCountryName = getCountryName(countryCode).replace(/'/g, "\\'");
-    
-    // Inject country and unsupported brokers data as JavaScript variables
     const countryDataScript = `
     <script>
       window.USER_COUNTRY = '${safeCountryCode}';
       window.UNSUPPORTED_BROKERS = ${safeUnsupportedBrokers};
       window.COUNTRY_NAME = '${safeCountryName}';
       console.log('Worker data loaded for country:', '${safeCountryCode}');
-    </script>
+    <\/script>
   `;
-    
-    // Inject the script before closing head tag
-    if (html.includes('</head>')) {
-      html = html.replace('</head>', countryDataScript + '</head>');
+    if (html.includes("</head>")) {
+      html = html.replace("</head>", countryDataScript + "</head>");
     } else {
-      // Fallback: inject at the beginning of body
-      html = html.replace('<body>', '<body>' + countryDataScript);
+      html = html.replace("<body>", "<body>" + countryDataScript);
     }
-    
-    // Handle broker placeholder if it exists
-    const brokerPlaceholder = '<!-- BROKERS_PLACEHOLDER -->';
+    const brokerPlaceholder = "<!-- BROKERS_PLACEHOLDER -->";
     if (html.includes(brokerPlaceholder)) {
       const brokerHtml = generateBrokerHtml(brokers, countryCode);
       html = html.replace(brokerPlaceholder, brokerHtml);
     }
-
-    // Handle beginner brokers placeholder if it exists
-    const beginnerPlaceholder = '<!-- BEGINNER_BROKERS_PLACEHOLDER -->';
+    const beginnerPlaceholder = "<!-- BEGINNER_BROKERS_PLACEHOLDER -->";
     if (html.includes(beginnerPlaceholder)) {
       const beginnerHtml = generateBeginnerBrokerHtml(brokers, countryCode);
       html = html.replace(beginnerPlaceholder, beginnerHtml);
     }
-
-    // Handle [beginner-57] placeholder directly
-    if (html.includes('[beginner-57]')) {
+    if (html.includes("[beginner-57]")) {
       const beginnerHtml = generateBeginnerBrokerHtml(brokers, countryCode);
       html = html.replace(/\[beginner-57\]/g, beginnerHtml);
     }
-    
     return html;
   } catch (error) {
-    console.error('Error injecting broker data:', error);
+    console.error("Error injecting broker data:", error);
     return html;
   }
 }
-
-// Generate broker HTML
+__name(injectBrokerData, "injectBrokerData");
 function generateBrokerHtml(brokers, countryCode) {
   if (!brokers || brokers.length === 0) {
     return `
       <div style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 0.5rem;">
-        <p>لا توجد شركات تداول متاحة حالياً في منطقتك.</p>
+        <p>\u0644\u0627 \u062A\u0648\u062C\u062F \u0634\u0631\u0643\u0627\u062A \u062A\u062F\u0627\u0648\u0644 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u0627\u064B \u0641\u064A \u0645\u0646\u0637\u0642\u062A\u0643.</p>
       </div>
     `;
   }
-
   let html = '<div class="companies-grid">';
-  
   brokers.forEach((broker, index) => {
     const minDeposit = broker.min_deposit || 0;
     const rating = broker.rating || 0;
-    const description = broker.description || 'وسيط موثوق للتداول';
+    const description = broker.description || "\u0648\u0633\u064A\u0637 \u0645\u0648\u062B\u0648\u0642 \u0644\u0644\u062A\u062F\u0627\u0648\u0644";
     const logoColor = getBrokerLogoColor(broker.name);
-    
-    // Generate star icons
     const starsHtml = Array(4).fill().map(() => `
       <svg class="company-star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
       </svg>
-    `).join('');
-    
+    `).join("");
     html += `
       <article class="company-card" data-position="${index + 1}" data-broker-id="${broker.id}">
         <div class="company-logo">
@@ -358,75 +310,64 @@ function generateBrokerHtml(brokers, countryCode) {
             </div>
           </div>
           <div class="company-license">
-            <div class="company-license-label">التراخيص</div>
+            <div class="company-license-label">\u0627\u0644\u062A\u0631\u0627\u062E\u064A\u0635</div>
             <div class="company-license-value">FCA</div>
           </div>
           <div class="company-details">
-            <div class="company-min-deposit">أقل مبلغ للإيداع</div>
+            <div class="company-min-deposit">\u0623\u0642\u0644 \u0645\u0628\u0644\u063A \u0644\u0644\u0625\u064A\u062F\u0627\u0639</div>
             <div class="company-deposit-amount">${minDeposit}</div>
           </div>
         </div>
-        <button class="company-open-account-btn">فتح حساب</button>
+        <button class="company-open-account-btn">\u0641\u062A\u062D \u062D\u0633\u0627\u0628</button>
       </article>
     `;
   });
-  
-  html += '</div>';
+  html += "</div>";
   return html;
 }
-
-// Get broker logo color based on name
+__name(generateBrokerHtml, "generateBrokerHtml");
 function getBrokerLogoColor(name) {
   const colors = {
-    'exness': '#fbbf24',
-    'evest': '#1e40af', 
-    'xtb': '#dc2626',
-    'avatrade': '#4f46e5',
-    'default': '#6366f1'
+    "exness": "#fbbf24",
+    "evest": "#1e40af",
+    "xtb": "#dc2626",
+    "avatrade": "#4f46e5",
+    "default": "#6366f1"
   };
-  
   const lowerName = name.toLowerCase();
   return colors[lowerName] || colors.default;
 }
-
-// Generate beginner broker table HTML
+__name(getBrokerLogoColor, "getBrokerLogoColor");
 function generateBeginnerBrokerHtml(brokers, countryCode) {
   if (!brokers || brokers.length === 0) {
     return `
       <div style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 0.5rem;">
-        <p>لا توجد شركات تداول متاحة حالياً في منطقتك.</p>
+        <p>\u0644\u0627 \u062A\u0648\u062C\u062F \u0634\u0631\u0643\u0627\u062A \u062A\u062F\u0627\u0648\u0644 \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u0627\u064B \u0641\u064A \u0645\u0646\u0637\u0642\u062A\u0643.</p>
       </div>
     `;
   }
-
   let html = '<div class="broker-table-wrapper">';
   html += '<table class="broker-table">';
-  
-  // Header
   html += `
     <thead>
       <tr class="table-header">
-        <th class="header-cell company-header">الشركة</th>
-        <th class="header-cell deposit-header">أقل مبلغ للإيداع</th>
-        <th class="header-cell rating-header">التقييم</th>
+        <th class="header-cell company-header">\u0627\u0644\u0634\u0631\u0643\u0629</th>
+        <th class="header-cell deposit-header">\u0623\u0642\u0644 \u0645\u0628\u0644\u063A \u0644\u0644\u0625\u064A\u062F\u0627\u0639</th>
+        <th class="header-cell rating-header">\u0627\u0644\u062A\u0642\u064A\u064A\u0645</th>
       </tr>
     </thead>
   `;
-  
-  // Broker rows - limit to top 4 for beginner table
   const topBrokers = brokers.slice(0, 4);
-  html += '<tbody>';
-  
+  html += "<tbody>";
   topBrokers.forEach((broker, index) => {
     const minDeposit = broker.min_deposit || 0;
     const rating = broker.rating || 0;
     const logoColor = getBrokerLogoColor(broker.name);
-    
     html += `
       <tr class="broker-row" data-position="${index + 1}" data-broker-id="${broker.id}">
         <td class="broker-cell company-cell">
           <div class="company-info">
-            <div class="company-logo" style="background: ${logoColor}; ${logoColor === '#fbbf24' ? 'color: #1f2937' : ''}">
+            <div class="company-logo" style="background: ${logoColor}; ${logoColor === "#fbbf24" ? "color: #1f2937" : ""}">
               <span class="logo-text">${broker.name}</span>
             </div>
             <span class="company-name">${broker.name}</span>
@@ -441,46 +382,45 @@ function generateBeginnerBrokerHtml(brokers, countryCode) {
       </tr>
     `;
   });
-  
-  html += '</tbody>';
-  
-  // Footer
+  html += "</tbody>";
   html += `
     <tfoot>
       <tr>
         <td colspan="3" class="table-footer">
           <div class="footer-content">
-            <span class="footer-icon">⚡</span>
-            <span class="footer-text">أفضل شركات التداول للمبتدئين</span>
+            <span class="footer-icon">\u26A1</span>
+            <span class="footer-text">\u0623\u0641\u0636\u0644 \u0634\u0631\u0643\u0627\u062A \u0627\u0644\u062A\u062F\u0627\u0648\u0644 \u0644\u0644\u0645\u0628\u062A\u062F\u0626\u064A\u0646</span>
           </div>
         </td>
       </tr>
     </tfoot>
   `;
-  
-  html += '</table></div>';
+  html += "</table></div>";
   return html;
 }
-
-// Get country name in Arabic
-function getCountryName(countryCode = 'SA') {
+__name(generateBeginnerBrokerHtml, "generateBeginnerBrokerHtml");
+function getCountryName(countryCode = "SA") {
   const countryNames = {
-    'SA': 'السعودية',
-    'AE': 'الإمارات', 
-    'KW': 'الكويت',
-    'BH': 'البحرين',
-    'QA': 'قطر',
-    'OM': 'عمان',
-    'JO': 'الأردن',
-    'LB': 'لبنان',
-    'EG': 'مصر',
-    'IQ': 'العراق',
-    'US': 'الولايات المتحدة',
-    'GB': 'المملكة المتحدة',
-    'DE': 'ألمانيا',
-    'FR': 'فرنسا',
-    'TR': 'تركيا'
+    "SA": "\u0627\u0644\u0633\u0639\u0648\u062F\u064A\u0629",
+    "AE": "\u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062A",
+    "KW": "\u0627\u0644\u0643\u0648\u064A\u062A",
+    "BH": "\u0627\u0644\u0628\u062D\u0631\u064A\u0646",
+    "QA": "\u0642\u0637\u0631",
+    "OM": "\u0639\u0645\u0627\u0646",
+    "JO": "\u0627\u0644\u0623\u0631\u062F\u0646",
+    "LB": "\u0644\u0628\u0646\u0627\u0646",
+    "EG": "\u0645\u0635\u0631",
+    "IQ": "\u0627\u0644\u0639\u0631\u0627\u0642",
+    "US": "\u0627\u0644\u0648\u0644\u0627\u064A\u0627\u062A \u0627\u0644\u0645\u062A\u062D\u062F\u0629",
+    "GB": "\u0627\u0644\u0645\u0645\u0644\u0643\u0629 \u0627\u0644\u0645\u062A\u062D\u062F\u0629",
+    "DE": "\u0623\u0644\u0645\u0627\u0646\u064A\u0627",
+    "FR": "\u0641\u0631\u0646\u0633\u0627",
+    "TR": "\u062A\u0631\u0643\u064A\u0627"
   };
-  
-  return countryNames[countryCode] || 'منطقتك';
+  return countryNames[countryCode] || "\u0645\u0646\u0637\u0642\u062A\u0643";
 }
+__name(getCountryName, "getCountryName");
+export {
+  worker_default as default
+};
+//# sourceMappingURL=worker.js.map

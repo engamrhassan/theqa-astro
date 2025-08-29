@@ -603,88 +603,96 @@ try {
   // Import the BeginnerBrokerTable component HTML
   const beginnerTableHTML = `
     <div class="broker-table-wrapper">
-      <div class="broker-table">
-        <div class="table-header">
-          <div class="header-cell company-header">الشركة</div>
-          <div class="header-cell deposit-header">أقل مبلغ للإيداع</div>
-          <div class="header-cell rating-header">التقييم</div>
-        </div>
-
-        <div class="broker-row">
-          <div class="broker-cell company-cell">
-            <div class="company-info">
-              <div class="company-logo" style="background: #1e40af">
-                <span class="logo-text">Evest</span>
+      <table class="broker-table">
+        <thead>
+          <tr class="table-header">
+            <th class="header-cell company-header">الشركة</th>
+            <th class="header-cell deposit-header">أقل مبلغ للإيداع</th>
+            <th class="header-cell rating-header">التقييم</th>
+          </tr>
+        </thead>
+        
+        <tbody>
+          <tr class="broker-row">
+            <td class="broker-cell company-cell">
+              <div class="company-info">
+                <div class="company-logo" style="background: #1e40af">
+                  <span class="logo-text">Evest</span>
+                </div>
+                <span class="company-name">Evest</span>
               </div>
-              <span class="company-name">Evest</span>
-            </div>
-          </div>
-          <div class="broker-cell deposit-cell">
-            <span class="deposit-amount">50</span>
-          </div>
-          <div class="broker-cell rating-cell">
-            <span class="rating-value">4.5/5</span>
-          </div>
-        </div>
+            </td>
+            <td class="broker-cell deposit-cell">
+              <span class="deposit-amount">50</span>
+            </td>
+            <td class="broker-cell rating-cell">
+              <span class="rating-value">4.5/5</span>
+            </td>
+          </tr>
 
-        <div class="broker-row">
-          <div class="broker-cell company-cell">
-            <div class="company-info">
-              <div class="company-logo" style="background: #4f46e5">
-                <span class="logo-text">AvaTrade</span>
+          <tr class="broker-row">
+            <td class="broker-cell company-cell">
+              <div class="company-info">
+                <div class="company-logo" style="background: #4f46e5">
+                  <span class="logo-text">AvaTrade</span>
+                </div>
+                <span class="company-name">AvaTrade</span>
               </div>
-              <span class="company-name">AvaTrade</span>
-            </div>
-          </div>
-          <div class="broker-cell deposit-cell">
-            <span class="deposit-amount">100</span>
-          </div>
-          <div class="broker-cell rating-cell">
-            <span class="rating-value">4/5</span>
-          </div>
-        </div>
+            </td>
+            <td class="broker-cell deposit-cell">
+              <span class="deposit-amount">100</span>
+            </td>
+            <td class="broker-cell rating-cell">
+              <span class="rating-value">4/5</span>
+            </td>
+          </tr>
 
-        <div class="broker-row">
-          <div class="broker-cell company-cell">
-            <div class="company-info">
-              <div class="company-logo" style="background: #dc2626">
-                <span class="logo-text">XTB</span>
+          <tr class="broker-row">
+            <td class="broker-cell company-cell">
+              <div class="company-info">
+                <div class="company-logo" style="background: #dc2626">
+                  <span class="logo-text">XTB</span>
+                </div>
+                <span class="company-name">XTB</span>
               </div>
-              <span class="company-name">XTB</span>
-            </div>
-          </div>
-          <div class="broker-cell deposit-cell">
-            <span class="deposit-amount">100</span>
-          </div>
-          <div class="broker-cell rating-cell">
-            <span class="rating-value">4/5</span>
-          </div>
-        </div>
+            </td>
+            <td class="broker-cell deposit-cell">
+              <span class="deposit-amount">100</span>
+            </td>
+            <td class="broker-cell rating-cell">
+              <span class="rating-value">4/5</span>
+            </td>
+          </tr>
 
-        <div class="broker-row">
-          <div class="broker-cell company-cell">
-            <div class="company-info">
-              <div class="company-logo" style="background: #fbbf24; color: #1f2937">
-                <span class="logo-text">Exness</span>
+          <tr class="broker-row">
+            <td class="broker-cell company-cell">
+              <div class="company-info">
+                <div class="company-logo" style="background: #fbbf24; color: #1f2937">
+                  <span class="logo-text">Exness</span>
+                </div>
+                <span class="company-name">Exness</span>
               </div>
-              <span class="company-name">Exness</span>
-            </div>
-          </div>
-          <div class="broker-cell deposit-cell">
-            <span class="deposit-amount">10</span>
-          </div>
-          <div class="broker-cell rating-cell">
-            <span class="rating-value">4.5/5</span>
-          </div>
-        </div>
+            </td>
+            <td class="broker-cell deposit-cell">
+              <span class="deposit-amount">10</span>
+            </td>
+            <td class="broker-cell rating-cell">
+              <span class="rating-value">4.5/5</span>
+            </td>
+          </tr>
+        </tbody>
 
-        <div class="table-footer">
-          <div class="footer-content">
-            <span class="footer-icon">⚡</span>
-            <span class="footer-text">أفضل شركات التداول للمبتدئين</span>
-          </div>
-        </div>
-      </div>
+        <tfoot>
+          <tr>
+            <td colspan="3" class="table-footer">
+              <div class="footer-content">
+                <span class="footer-icon">⚡</span>
+                <span class="footer-text">أفضل شركات التداول للمبتدئين</span>
+              </div>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
   `;
 
