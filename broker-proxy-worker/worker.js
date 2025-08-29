@@ -298,6 +298,13 @@ function injectBrokerData(html, brokers, countryCode, unsupportedBrokers = []) {
       const brokerHtml = generateBrokerHtml(brokers, countryCode);
       html = html.replace(brokerPlaceholder, brokerHtml);
     }
+
+    // Handle beginner brokers placeholder if it exists
+    const beginnerPlaceholder = '<!-- BEGINNER_BROKERS_PLACEHOLDER -->';
+    if (html.includes(beginnerPlaceholder)) {
+      const beginnerHtml = generateBeginnerBrokerHtml(brokers, countryCode);
+      html = html.replace(beginnerPlaceholder, beginnerHtml);
+    }
     
     return html;
   } catch (error) {
@@ -374,6 +381,70 @@ function getBrokerLogoColor(name) {
   
   const lowerName = name.toLowerCase();
   return colors[lowerName] || colors.default;
+}
+
+// Generate beginner broker table HTML
+function generateBeginnerBrokerHtml(brokers, countryCode) {
+  if (!brokers || brokers.length === 0) {
+    return `
+      <div style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 0.5rem;">
+        <p>لا توجد شركات تداول متاحة حالياً في منطقتك.</p>
+      </div>
+    `;
+  }
+
+  let html = '<div class="beginner-table-grid">';
+  html += '<div class="beginner-broker-table">';
+  
+  // Header
+  html += `
+    <div class="beginner-table-header">
+      <div class="beginner-header-cell beginner-company-header">الشركة</div>
+      <div class="beginner-header-cell">أقل مبلغ للإيداع</div>
+      <div class="beginner-header-cell">التقييم</div>
+    </div>
+  `;
+  
+  // Broker rows - limit to top 4 for beginner table
+  const topBrokers = brokers.slice(0, 4);
+  
+  topBrokers.forEach((broker, index) => {
+    const minDeposit = broker.min_deposit || 0;
+    const rating = broker.rating || 0;
+    const logoColor = getBrokerLogoColor(broker.name);
+    
+    html += `
+      <div class="beginner-broker-row" data-position="${index + 1}" data-broker-id="${broker.id}">
+        <div class="beginner-broker-cell beginner-company-cell">
+          <div class="beginner-company-info">
+            <div class="beginner-company-logo" style="background: ${logoColor}; ${logoColor === '#fbbf24' ? 'color: #1f2937' : ''}">
+              <span class="beginner-logo-text">${broker.name}</span>
+            </div>
+            <span class="beginner-company-name">${broker.name}</span>
+          </div>
+        </div>
+        <div class="beginner-broker-cell">
+          <span class="beginner-deposit-amount">${minDeposit}</span>
+        </div>
+        <div class="beginner-broker-cell">
+          <span class="beginner-rating-value">${rating}/5</span>
+        </div>
+      </div>
+    `;
+  });
+  
+  // Footer
+  html += `
+    <div class="beginner-table-footer">
+      <div class="beginner-footer-content">
+        <span class="beginner-footer-icon">⚡</span>
+        <span class="beginner-footer-text">أفضل شركات التداول للمبتدئين</span>
+      </div>
+    </div>
+  `;
+  
+  html += '</div></div>';
+  return html;
 }
 
 // Get country name in Arabic

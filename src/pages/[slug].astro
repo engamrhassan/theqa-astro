@@ -890,16 +890,37 @@ try {
 
     let content = contentBody.innerHTML;
     
-    // Replace [beginner-57] placeholder
+    // Replace [beginner-57] placeholder with component import
     if (content.includes('[beginner-57]')) {
+      // Create the component HTML structure similar to BrokerList
+      const beginnerTableComponentHTML = `
+        <div class="beginner-brokers-placeholder">
+          <!-- BEGINNER_BROKERS_PLACEHOLDER -->
+          <div class="fallback-beginner-table">
+            ${beginnerTableHTML}
+          </div>
+        </div>
+      `;
+      
       // Add styles if not already added
       if (!document.getElementById('beginner-table-styles')) {
         document.head.insertAdjacentHTML('beforeend', beginnerTableStyles);
       }
       
-      // Replace the placeholder with the table HTML
-      content = content.replace(/\[beginner-57\]/g, beginnerTableHTML);
+      // Replace the placeholder with the component structure
+      content = content.replace(/\[beginner-57\]/g, beginnerTableComponentHTML);
       contentBody.innerHTML = content;
+      
+      // Trigger fallback display logic
+      setTimeout(() => {
+        const fallbackTable = document.querySelector('.fallback-beginner-table');
+        if (fallbackTable) {
+          const dynamicContent = document.querySelector('.beginner-table-grid');
+          if (!dynamicContent) {
+            fallbackTable.style.display = 'block';
+          }
+        }
+      }, 100);
       
       console.log('Replaced [beginner-57] placeholder with BeginnerBrokerTable component');
     }
