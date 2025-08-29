@@ -305,6 +305,12 @@ function injectBrokerData(html, brokers, countryCode, unsupportedBrokers = []) {
       const beginnerHtml = generateBeginnerBrokerHtml(brokers, countryCode);
       html = html.replace(beginnerPlaceholder, beginnerHtml);
     }
+
+    // Handle [beginner-57] placeholder directly
+    if (html.includes('[beginner-57]')) {
+      const beginnerHtml = generateBeginnerBrokerHtml(brokers, countryCode);
+      html = html.replace(/\[beginner-57\]/g, beginnerHtml);
+    }
     
     return html;
   } catch (error) {
