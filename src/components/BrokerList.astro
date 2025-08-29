@@ -15,44 +15,156 @@ const {
 
 <section class="brokers-section">
   <div class="container">
-    <div class="section-header">
-      <h2 class="section-title">{title}</h2>
-      {subtitle && <p class="section-subtitle">{subtitle}</p>}
-      <div class="country-indicator">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5Z" fill="currentColor"/>
-        </svg>
-        <span>مرتبة خصيصاً لموقعك</span>
-      </div>
-    </div>
 
     {showPlaceholder && (
       <div class="brokers-placeholder">
         <!-- BROKERS_PLACEHOLDER -->
-                 <div class="default-brokers">
+        <div class="default-brokers">
           
           <!-- Fallback broker cards (shown if Worker doesn't work) -->
           <div class="fallback-brokers">
-            <div class="broker-card-fallback">
-              <div class="broker-placeholder">
-                <div class="placeholder-content">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"/>
-                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2"/>
-                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  <span>شركة تداول موثوقة</span>
+            <!-- Exness Broker Card -->
+            <div class="broker-card">
+              <div class="broker-logo">
+                <div class="logo-container exness-logo">
+                  <span class="broker-name">Exness</span>
                 </div>
               </div>
-              <div class="broker-content">
-                <h3>شركات التداول المرخصة</h3>
-                <p>سيتم عرض أفضل شركات التداول المناسبة لموقعك الجغرافي هنا</p>
-                <div class="broker-features">
-                  <div class="feature">✓ مرخصة ومنظمة</div>
-                  <div class="feature">✓ دعم اللغة العربية</div>
-                  <div class="feature">✓ مناسبة لمنطقتك</div>
+              <div class="broker-info">
+                <div class="rating">
+                  <div class="stars">
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="license">
+                  <div class="license-label">التراخيص</div>
+                  <div class="license-value">FCA</div>
+                </div>
+                <div class="broker-details">
+                  <div class="min-deposit">أقل مبلغ للإيداع</div>
+                  <div class="deposit-amount">10</div>
                 </div>
               </div>
+              <button class="open-account-btn">فتح حساب</button>
+            </div>
+
+            <!-- Evest Broker Card -->
+            <div class="broker-card">
+              <div class="broker-logo">
+                <div class="logo-container evest-logo">
+                  <span class="broker-name">Evest</span>
+                </div>
+              </div>
+              <div class="broker-info">
+                <div class="rating">
+                  <div class="stars">
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="license">
+                  <div class="license-label">التراخيص</div>
+                  <div class="license-value">VFSC</div>
+                </div>
+                <div class="broker-details">
+                  <div class="min-deposit">أقل مبلغ للإيداع</div>
+                  <div class="deposit-amount">50</div>
+                </div>
+              </div>
+              <button class="open-account-btn">فتح حساب</button>
+            </div>
+
+            <!-- XTB Broker Card -->
+            <div class="broker-card">
+              <div class="broker-logo">
+                <div class="logo-container xtb-logo">
+                  <span class="broker-name">XTB</span>
+                </div>
+              </div>
+              <div class="broker-info">
+                <div class="rating">
+                  <div class="stars">
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="license">
+                  <div class="license-label">التراخيص</div>
+                  <div class="license-value">DFSA</div>
+                </div>
+                <div class="broker-details">
+                  <div class="min-deposit">أقل مبلغ للإيداع</div>
+                  <div class="deposit-amount">100</div>
+                </div>
+              </div>
+              <button class="open-account-btn">فتح حساب</button>
+            </div>
+
+            <!-- AvaTrade Broker Card -->
+            <div class="broker-card">
+              <div class="broker-logo">
+                <div class="logo-container avatrade-logo">
+                  <span class="broker-name">AvaTrade</span>
+                </div>
+              </div>
+              <div class="broker-info">
+                <div class="rating">
+                  <div class="stars">
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <svg class="star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="license">
+                  <div class="license-label">التراخيص</div>
+                  <div class="license-value">ADGM</div>
+                </div>
+                <div class="broker-details">
+                  <div class="min-deposit">أقل مبلغ للإيداع</div>
+                  <div class="deposit-amount">100</div>
+                </div>
+              </div>
+              <button class="open-account-btn">فتح حساب</button>
             </div>
           </div>
         </div>
@@ -137,76 +249,156 @@ const {
   /* Fallback Brokers */
   .fallback-brokers {
     display: none; /* Will be shown if JS/Worker fails */
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
+    flex-direction: column;
+    gap: 1rem;
     margin-top: 2rem;
   }
 
-  .broker-card-fallback {
+  .broker-card {
     background: white;
-    border-radius: 1rem;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--border-color);
-    transition: transform 0.2s, box-shadow 0.2s;
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    transition: all 0.2s ease;
+    min-height: 80px;
   }
 
-  .broker-card-fallback:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  .broker-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
   }
 
-  .broker-placeholder {
-    height: 150px;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  .open-account-btn {
+    background: #fbbf24;
+    color: #1f2937;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    min-width: 100px;
+    flex-shrink: 0;
+  }
+
+  .open-account-btn:hover {
+    background: #f59e0b;
+    transform: translateY(-1px);
+  }
+
+  .broker-info {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex: 1;
+  }
+
+  .broker-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 80px;
+  }
+
+  .min-deposit {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 2px;
+    line-height: 1;
+  }
+
+  .deposit-amount {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1;
+  }
+
+  .license {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 80px;
+  }
+
+  .license-label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 2px;
+    line-height: 1;
+  }
+
+  .license-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1;
+  }
+
+  .rating {
+    display: flex;
+    align-items: center;
+  }
+
+  .stars {
+    display: flex;
+    gap: 2px;
+  }
+
+  .star {
+    width: 16px;
+    height: 16px;
+  }
+
+  .broker-logo {
+    flex-shrink: 0;
+  }
+
+  .logo-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
+    font-weight: 700;
+    font-size: 14px;
   }
 
-  .placeholder-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
+  .exness-logo {
+    background: #fbbf24;
+    color: #1f2937;
   }
 
-  .placeholder-content span {
-    font-weight: 500;
-    font-size: 0.875rem;
+  .evest-logo {
+    background: #1e40af;
+    color: white;
   }
 
-  .broker-content {
-    padding: 1.5rem;
+  .xtb-logo {
+    background: #dc2626;
+    color: white;
   }
 
-  .broker-content h3 {
-    font-size: 1.25rem;
-    color: var(--text-primary);
-    margin-bottom: 0.75rem;
+  .avatrade-logo {
+    background: #4f46e5;
+    color: white;
+  }
+
+  .broker-name {
+    font-size: 12px;
     font-weight: 600;
-  }
-
-  .broker-content p {
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-    line-height: 1.6;
-  }
-
-  .broker-features {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .feature {
-    background: var(--bg-secondary);
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    font-weight: 500;
+    text-align: center;
   }
 
   /* Important Notice */
@@ -353,6 +545,49 @@ const {
       font-size: 1rem;
     }
 
+    .broker-card {
+      padding: 12px 16px;
+      gap: 12px;
+      min-height: 70px;
+    }
+
+    .broker-info {
+      gap: 16px;
+    }
+
+    .broker-details,
+    .license {
+      min-width: 60px;
+    }
+
+    .min-deposit,
+    .license-label {
+      font-size: 11px;
+    }
+
+    .deposit-amount {
+      font-size: 16px;
+    }
+
+    .license-value {
+      font-size: 13px;
+    }
+
+    .logo-container {
+      width: 60px;
+      height: 60px;
+    }
+
+    .broker-name {
+      font-size: 11px;
+    }
+
+    .open-account-btn {
+      padding: 10px 16px;
+      font-size: 12px;
+      min-width: 80px;
+    }
+
     .important-notice {
       flex-direction: column;
       text-align: center;
@@ -377,6 +612,25 @@ const {
       font-size: 0.875rem;
       padding: 0.5rem 1rem;
     }
+
+    .broker-card {
+      flex-direction: column;
+      text-align: center;
+      min-height: auto;
+      padding: 16px;
+    }
+
+    .broker-info {
+      justify-content: space-around;
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .logo-container {
+      width: 50px;
+      height: 50px;
+      margin-bottom: 8px;
+    }
   }
 </style>
 
@@ -390,7 +644,7 @@ const {
        const dynamicContent = document.querySelector('.companies-grid');
        
        if (!dynamicContent) {
-         fallbackBrokers.style.display = 'grid';
+         (fallbackBrokers as HTMLElement).style.display = 'flex';
        }
      }
    }, 3000); // Show fallback after 3 seconds
