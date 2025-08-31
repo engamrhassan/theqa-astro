@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BrokerModal from '../components/BrokerModal.astro';
-import { getCacheBuster } from '../utils/cache-simple.js';
+// Cache busting not needed for build-time API calls (static generation)
 
 // Define types for review/broker data
 interface ReviewBroker {
@@ -56,9 +56,8 @@ async function fetchReviewBrokers(): Promise<ReviewBroker[]> {
       redirect: "follow"
     };
     
-    // Use daily cache strategy for broker reviews
-    const cacheBuster = getCacheBuster('reviews');
-    const response = await fetch(`https://theqalink.com/api/v1/reviews${cacheBuster}`, requestOptions);
+    // No cache busting needed for build-time API calls (static generation)
+    const response = await fetch("https://theqalink.com/api/v1/reviews", requestOptions);
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BrokerList from '../components/BrokerList.astro';
-import { getCacheBuster } from '../utils/cache-simple.js';
+// Cache busting not needed for build-time API calls (static generation)
 
 export async function getStaticPaths() {
   return [
@@ -43,9 +43,8 @@ let pageData = null;
 let error = null;
 
 try {
-  // Use deployment-based cache version instead of timestamp
-  const cacheBuster = getCacheBuster('page');
-  const response = await fetch(API_CONFIG.url + cacheBuster, {
+  // No cache busting needed for build-time API calls (static generation)
+  const response = await fetch(API_CONFIG.url, {
     method: "GET",
     headers: API_CONFIG.headers,
     redirect: "follow"
