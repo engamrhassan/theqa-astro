@@ -33,18 +33,25 @@ async function clearAllCaches() {
       console.log('❌ Failed to clear edge cache:', await edgeCacheResponse.text());
     }
     
-    // Step 2: Increment Worker Cache Version
-    console.log('🔧 Incrementing worker cache version...');
-    const currentVersion = parseInt(process.env.CURRENT_CACHE_VERSION || '22');
-    const newVersion = currentVersion + 1;
+    // Step 2: Generate new cache version
+    console.log('🔧 Generating new cache version...');
     
-    console.log(`📈 Cache version: ${currentVersion} → ${newVersion}`);
+    // Read current build info if available
+    let newVersion;
+    try {
+      const buildInfo = JSON.parse(require('fs').readFileSync('src/build-info.json', 'utf8'));
+      newVersion = `${buildInfo.version}-${Date.now()}`;
+      console.log(`📈 New cache version: ${newVersion}`);
+    } catch (error) {
+      newVersion = `manual-${Date.now()}`;
+      console.log(`📈 Generated cache version: ${newVersion}`);
+    }
     
-    // You would need to update wrangler.toml and redeploy worker
-    // For now, just log the instruction
-    console.log('⚠️  MANUAL STEP REQUIRED:');
-    console.log(`   Update CACHE_VERSION in wrangler.toml to "${newVersion}"`);
-    console.log('   Then run: npx wrangler deploy');
+    // Instructions for manual deployment
+    console.log('⚠️  NEXT STEPS:');
+    console.log('   1. Redeploy your site to generate new cache version');
+    console.log('   2. Or set CACHE_VERSION environment variable manually');
+    console.log(`   3. Current suggested version: ${newVersion}`);
     
     console.log('🎉 Cache clearing process completed!');
     

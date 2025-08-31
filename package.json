@@ -4,9 +4,14 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/build.js",
+    "build:simple": "astro build",
+    "build:cf": "node _build-info.js && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test:cache": "node test-cache-version.js",
+    "health:cache": "node cache-health-check.js",
+    "cache:clear": "node clear-cache.js"
   },
   "dependencies": {
     "astro": "^5.13.2"
