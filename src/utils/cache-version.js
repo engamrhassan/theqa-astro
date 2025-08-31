@@ -1,28 +1,42 @@
 /**
- * Cache Version Management
+ * Cache Version Management - Optimized for Performance
  * Provides deployment-based cache busting instead of timestamp-based
  */
 
-// Generate version based on build info
+// Cached version to avoid repeated file system operations
+let cachedVersion = null;
+let lastCheckTime = 0;
+const CACHE_TTL = 60000; // Cache version for 1 minute to avoid repeated FS operations
+
+// Generate version based on build info (optimized with caching)
 function generateCacheVersion() {
-  // Try to read build info generated at build time
+  // Return cached version if still valid
+  const now = Date.now();
+  if (cachedVersion && (now - lastCheckTime) < CACHE_TTL) {
+    return cachedVersion;
+  }
+  
+  // Browser environment - use simple fallback
   if (typeof process === 'undefined') {
-    // Browser environment - try to get from window or use fallback
     if (typeof window !== 'undefined' && window.BUILD_INFO) {
-      return window.BUILD_INFO.cacheVersion;
+      cachedVersion = window.BUILD_INFO.cacheVersion;
+    } else {
+      // Fast browser fallback - use current date only
+      const buildDate = new Date().toISOString().split('T')[0];
+      cachedVersion = `v1-${buildDate}`;
     }
-    // Browser fallback
-    const buildDate = new Date().toISOString().split('T')[0];
-    return `v1-${buildDate}`;
+    lastCheckTime = now;
+    return cachedVersion;
   }
   
-  // Node.js environment - use synchronous operations
-  // Use environment variable if available (set by CI/CD or build script)
+  // Fast path: Use environment variable if available
   if (process.env.CACHE_VERSION) {
-    return process.env.CACHE_VERSION;
+    cachedVersion = process.env.CACHE_VERSION;
+    lastCheckTime = now;
+    return cachedVersion;
   }
   
-  // Try to read build info file synchronously
+  // Try to read build info file only once per minute
   try {
     const fs = require('fs');
     const path = require('path');
@@ -30,27 +44,32 @@ function generateCacheVersion() {
     
     if (fs.existsSync(buildInfoPath)) {
       const buildInfo = JSON.parse(fs.readFileSync(buildInfoPath, 'utf8'));
-      return buildInfo.cacheVersion;
+      cachedVersion = buildInfo.cacheVersion;
+      lastCheckTime = now;
+      return cachedVersion;
     }
   } catch (error) {
-    console.warn('Could not read build-info.json, falling back to package.json');
+    // Silent fallback - avoid console.warn during production builds
   }
   
-  // Use package.json version + simplified timestamp for local builds
-  try {
-    const pkg = require('../../package.json');
-    const buildDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    const buildHour = new Date().getHours(); // 0-23
-    return `${pkg.version}-${buildDate}-${buildHour}`;
-  } catch (error) {
-    console.warn('Could not read package.json for cache version');
-    // Final fallback
-    const buildDate = new Date().toISOString().split('T')[0];
-    return `v1-${buildDate}`;
-  }
+  // Fast fallback without package.json read
+  const buildDate = new Date().toISOString().split('T')[0];
+  const buildHour = new Date().getHours();
+  cachedVersion = `v1-${buildDate}-${buildHour}`;
+  lastCheckTime = now;
+  return cachedVersion;
 }
 
-// Cache version for this build
+// Lazy initialization - only generate when needed
+let _cacheVersion = null;
+export function getCacheVersion() {
+  if (_cacheVersion === null) {
+    _cacheVersion = generateCacheVersion();
+  }
+  return _cacheVersion;
+}
+
+// Export as constant (computed once)
 export const CACHE_VERSION = generateCacheVersion();
 
 // Different cache strategies

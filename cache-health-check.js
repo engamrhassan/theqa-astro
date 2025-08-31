@@ -7,7 +7,7 @@
  * Usage: node cache-health-check.js [--verbose] [--json]
  */
 
-import { getCacheBuster, getCacheInfo, CACHE_VERSION } from './src/utils/cache-version.js';
+import { getCacheBuster, getCacheInfo } from './src/utils/cache-simple.js';
 import { execSync } from 'child_process';
 import fs from 'fs';
 
@@ -28,7 +28,7 @@ class CacheHealthChecker {
     this.jsonOutput = process.argv.includes('--json');
     this.results = {
       timestamp: new Date().toISOString(),
-      version: CACHE_VERSION,
+      version: getCacheInfo().version,
       status: 'UNKNOWN',
       checks: {},
       errors: [],
