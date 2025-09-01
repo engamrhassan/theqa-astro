@@ -103,9 +103,9 @@ const API_CONFIG = {
   }
 };
 
-// Cache busting with timestamp
-const cacheBuster = `?t=${Date.now()}`;
-const response = await fetch(API_CONFIG.url + cacheBuster, {
+// No cache busting needed for build-time API calls (static generation)
+// Cache busting is only needed for runtime/client-side requests
+const response = await fetch(API_CONFIG.url, {
   method: "GET",
   headers: API_CONFIG.headers,
   redirect: "follow"
@@ -117,6 +117,7 @@ const response = await fetch(API_CONFIG.url + cacheBuster, {
 // src/pages/reviews.astro
 async function fetchReviewBrokers(): Promise<ReviewBroker[]> {
   try {
+    // No cache busting needed for build-time API calls (static generation)
     const response = await fetch("https://theqalink.com/api/v1/reviews", requestOptions);
     const data = await response.json();
     
@@ -164,6 +165,17 @@ async function getBrokersForCountry(database, countryCode) {
 - **Static Generation**: Pages built once and cached until next deployment
 - **Content Collections**: Markdown files processed at build time
 - **Asset Optimization**: CSS/JS bundled and minified
+- **API Calls**: No cache busting needed - allows server-side caching during build
+
+#### ⚠️ **Important**: Build-time vs Runtime Caching
+```javascript
+// ❌ DON'T: Cache busting during static generation (causes performance issues)
+const cacheBuster = `?t=${Date.now()}`;
+const response = await fetch(API_CONFIG.url + cacheBuster); // Slow build times
+
+// ✅ DO: Allow API server caching during build
+const response = await fetch(API_CONFIG.url); // Fast build times
+```
 
 ### 2. Cloudflare Edge Caching
 ```javascript
@@ -184,9 +196,18 @@ return new Response(html, {
 - **Varies by**: User's country (CF-IPCountry header)
 
 ### 3. API Response Caching
+
+#### Build-time API Calls (Static Generation)
 ```javascript
-// Cache busting for external API calls
-const cacheBuster = `?t=${Date.now()}`;
+// No cache busting needed - allows API server caching during build
+const response = await fetch(API_CONFIG.url);
+```
+
+#### Runtime API Calls (Client-side)
+```javascript
+// Cache busting may be needed for dynamic content
+import { getCacheBuster } from './utils/cache-simple.js';
+const cacheBuster = getCacheBuster('live'); // For frequently changing data
 const response = await fetch(API_CONFIG.url + cacheBuster);
 ```
 

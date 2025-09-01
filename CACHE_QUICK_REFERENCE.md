@@ -2,14 +2,17 @@
 
 ## ⚡ Emergency Commands
 ```bash
-# Clear all caches immediately
-node clear-cache.js
+# Test page performance first
+curl -w "Time: %{time_total}s\n" -o /dev/null -s https://astro.theqalink.com/
 
-# Force new cache version
+# Clear CDN caches if needed
+npm run cache:clear
+
+# Force new deployment
 git commit --allow-empty -m "Force refresh" && git push
 
-# Check current cache version
-cat src/build-info.json | grep cacheVersion
+# Check cache system health
+npm run health:cache
 ```
 
 ## 🔄 Daily Commands
@@ -24,37 +27,50 @@ node test-cache-version.js
 curl -I https://astro.theqalink.com/ | grep -i cache
 ```
 
-## 📊 Cache Strategies At-a-Glance
+## 📊 Cache Strategy Guide
 
-| Strategy | Code | Duration | Use Case | Cache Hit Rate |
-|----------|------|----------|----------|----------------|
-| **Deployment** | `getCacheBuster('page')` | Until redeploy | Static content | 95%+ |
-| **Daily** | `getCacheBuster('reviews')` | 24 hours | Daily updates | 90%+ |
-| **Hourly** | `getCacheBuster('live')` | 1 hour | Live data | 75%+ |
-| **User** | `getCacheBuster('user')` | No cache | Personal data | 0% |
+### ✅ **Build-time API Calls** (Astro Components)
+```javascript
+// CORRECT: No cache busting during static generation
+const response = await fetch(API_CONFIG.url);
+```
 
-## 🎯 Example URLs Generated
+### ✅ **Client-side API Calls** (Browser JavaScript)
+```javascript  
+// CORRECT: Use cache busting for runtime requests
+import { getCacheBuster } from './utils/cache-simple.js';
+const cacheBuster = getCacheBuster('live');
+const response = await fetch(API_CONFIG.url + cacheBuster);
 ```
-Page Content:   ?v=0.0.1-3eee179
-Broker Reviews: ?v=0.0.1-3eee179&d=2025-08-31
-Live Data:      ?v=0.0.1-3eee179&h=2025-08-31-16
-User Data:      ?v=0.0.1-3eee179&u=abc123
+
+| Context | Cache Busting | Performance | Use Case |
+|---------|---------------|-------------|----------|
+| **Build-time** | ❌ No | Fast (800ms) | Astro `.astro` files |
+| **Client-side** | ✅ Yes | Varies | Browser JavaScript |
+
+## 🎯 Example Cache URLs (Client-side Only)
 ```
+Daily Cache:    ?v=2025-08-31
+Hourly Cache:   ?v=2025-08-31-17  
+No Cache:       ?t=1693478400000
+```
+
+⚠️ **Important**: Only use these for client-side JavaScript, NOT in Astro components!
 
 ## 🔧 Troubleshooting Quick Fixes
 
 | Problem | Quick Solution |
 |---------|----------------|
-| Cache not updating | `node clear-cache.js && git push` |
-| Build info missing | `node scripts/build.js` |
-| Wrong cache strategy | Check `getCacheBuster('type')` usage |
-| CF Pages build failing | Set build command: `node _build-info.js && npm run build:simple` |
+| **Slow page loading (2s+)** | Remove cache busting from build-time API calls |
+| **Cache not updating** | `npm run cache:clear && git push` |
+| **Build taking too long** | Don't use `getCacheBuster()` in `.astro` files |
+| **Performance regression** | Test: `curl -w "Time: %{time_total}s\n" -s URL` |
 
 ## 📈 Performance Targets
-- **Cache Hit Rate**: >85%
-- **Cache Response Time**: <100ms
-- **API Response Time**: <500ms
-- **Build Time**: <2 minutes
+- **Page Load Time**: <1 second
+- **HTML Generation**: <500ms  
+- **Build Time**: <6 seconds
+- **API Response Time**: <500ms (build-time)
 
 ## 🚨 Emergency Contacts & Resources
 - **Cloudflare Dashboard**: https://dash.cloudflare.com/

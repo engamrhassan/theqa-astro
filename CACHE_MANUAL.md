@@ -98,15 +98,37 @@ Example: 0.0.1-2025-08-31-16
 
 ## 🎯 Cache Strategies
 
-### 1. Deployment Cache (DEFAULT)
+### ⚠️ **Critical Update**: Build-time vs Runtime Caching
+
+#### Build-time API Calls (Static Generation)
+```javascript
+// ✅ CORRECT: No cache busting during build
+const response = await fetch(API_CONFIG.url);
+```
+- **Use for**: All Astro component API calls during `astro build`
+- **Why**: Allows API server caching, faster builds
+- **Performance**: ~800ms page generation vs 2.8s with cache busting
+
+#### Runtime API Calls (Client-side)
+```javascript
+// ✅ CORRECT: Cache busting for client requests
+import { getCacheBuster } from '../utils/cache-simple.js';
+const cacheBuster = getCacheBuster('live');
+const response = await fetch(API_CONFIG.url + cacheBuster);
+```
+- **Use for**: JavaScript fetch calls in browser
+- **Why**: Ensures fresh data for users
+- **Performance**: Prevents stale client-side data
+
+### 1. Simple Daily Cache (CURRENT SYSTEM)
 ```javascript
 getCacheBuster('page')
-// Output: ?v=0.0.1-3eee179
+// Output: ?v=2025-08-31
 ```
-- **Duration**: Until next deployment
-- **Use for**: Static content, page templates, layouts
-- **Cache hits**: 99%+ between deployments
-- **Best for**: Content that changes with code releases
+- **Duration**: 24 hours
+- **Use for**: Client-side API calls only
+- **Cache hits**: High during the day
+- **Best for**: Content that changes daily
 
 ### 2. Daily Cache
 ```javascript
@@ -170,18 +192,18 @@ grep -i "cache" logs/*.log
 ### Content Updates
 ```bash
 # For immediate content updates (emergency)
-# 1. Clear caches first
-node clear-cache.js
-
-# 2. Update content
+# 1. Update content files
 # Edit your content files...
 
-# 3. Deploy immediately
-git add . && git commit -m "Urgent content update" && git push
+# 2. Build and deploy
+npm run build
+git add . && git commit -m "Content update" && git push
 
-# 4. Verify cache version changed
-# Wait 2-3 minutes, then check:
-curl -I https://astro.theqalink.com/ | grep -i cache
+# 3. Verify page performance
+curl -w "Load time: %{time_total}s\n" -o /dev/null -s https://astro.theqalink.com/
+
+# 4. Clear CDN cache if needed (optional)
+npm run cache:clear
 ```
 
 ### Scheduled Maintenance
@@ -262,23 +284,38 @@ Key sections to monitor:
 
 ### Common Issues
 
-#### 1. Cache Not Updating After Deployment
+#### 1. Slow Page Loading (2+ seconds)
 ```
-Symptoms: Old content still showing
-Diagnosis: Cache version not changing
+Symptoms: Pages take 2-3 seconds to load, slow HTML generation
+Diagnosis: Cache busting during build-time API calls
 
 Solutions:
-# Check if build info was generated
-cat src/build-info.json
+# ✅ Remove cache busting from build-time API calls
+# In src/pages/*.astro files:
+const response = await fetch(API_CONFIG.url); // No cache buster
 
-# Verify cache version in use
-node test-cache-version.js
+# ❌ Don't do this during build:
+const cacheBuster = getCacheBuster('page');
+const response = await fetch(API_CONFIG.url + cacheBuster); // Causes 2.8s delays
 
-# Manual cache clear
-node clear-cache.js
+# Test page performance
+curl -w "Time: %{time_total}s\n" -o /dev/null -s https://astro.theqalink.com/
+# Should be <1 second
+```
+
+#### 2. Cache Not Updating After Deployment
+```
+Symptoms: Old content still showing
+Diagnosis: CDN cache not cleared
+
+Solutions:
+# Clear CDN cache
+npm run cache:clear
 
 # Force new deployment
 git commit --allow-empty -m "Force refresh" && git push
+
+# Test with hard refresh in browser (Ctrl+F5)
 ```
 
 #### 2. Different Content for Different Users
