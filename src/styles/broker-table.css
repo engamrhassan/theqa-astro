@@ -1,0 +1,195 @@
+/* BeginnerBrokerTable Styles */
+.broker-table-wrapper {
+  width: 100%;
+  max-width: 800px;
+  margin: 2rem auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.broker-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-header {
+  background: #e5e7eb;
+}
+
+.header-cell {
+  padding: 16px 20px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+  text-align: center;
+  border: none;
+}
+
+.company-header {
+  text-align: right;
+  width: 40%;
+}
+
+.deposit-header,
+.rating-header {
+  width: 30%;
+}
+
+.broker-row:hover {
+  background: #f8fafc;
+}
+
+.broker-cell {
+  padding: 20px;
+  border-bottom: 1px solid #f3f4f6;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.company-cell {
+  text-align: right;
+}
+
+.company-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.company-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #2563eb;
+}
+
+.company-logo {
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 10px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.logo-text {
+  line-height: 1;
+}
+
+.deposit-amount {
+  font-weight: 700;
+  font-size: 18px;
+  color: #111827;
+}
+
+.rating-value {
+  font-weight: 600;
+  font-size: 16px;
+  color: #2563eb;
+}
+
+.table-footer {
+  background: #e5e7eb;
+  padding: 16px 20px;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.footer-icon {
+  font-size: 16px;
+}
+
+.footer-text {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .broker-table-wrapper {
+    margin: 1rem;
+    border-radius: 12px;
+  }
+
+  .header-cell,
+  .broker-cell {
+    padding: 12px 16px;
+  }
+
+  .company-info {
+    gap: 12px;
+  }
+
+  .company-name {
+    font-size: 14px;
+  }
+
+  .company-logo {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+    font-size: 9px;
+  }
+
+  .deposit-amount {
+    font-size: 16px;
+  }
+
+  .rating-value {
+    font-size: 14px;
+  }
+
+  .header-cell,
+  .footer-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-cell,
+  .broker-cell {
+    padding: 10px 12px;
+  }
+
+  .company-info {
+    gap: 8px;
+  }
+
+  .company-name {
+    font-size: 13px;
+  }
+
+  .company-logo {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+    font-size: 8px;
+  }
+
+  .deposit-amount {
+    font-size: 15px;
+  }
+
+  .rating-value {
+    font-size: 13px;
+  }
+}

@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BrokerList from '../components/BrokerList.astro';
-// Cache busting not needed for build-time API calls (static generation)
+import BrokerTable from '../components/BrokerTable.astro';
+import pageCache from '../data/page-cache.json';
 
 export async function getStaticPaths() {
   return [
@@ -38,17 +39,22 @@ const API_CONFIG = {
   }
 };
 
-// Fetch page data with deployment-based cache busting
 let pageData = null;
 let error = null;
 
 try {
-  // No cache busting needed for build-time API calls (static generation)
+  // Fetch from API with timeout for better performance
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+  
   const response = await fetch(API_CONFIG.url, {
     method: "GET",
     headers: API_CONFIG.headers,
-    redirect: "follow"
+    redirect: "follow",
+    signal: controller.signal
   });
+  
+  clearTimeout(timeoutId);
   
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -56,22 +62,42 @@ try {
   
   const data = await response.json();
   
-  // Extract only name and content from the API response
+  // Extract content from API response
   const extractedTitle = data.data?.name || '';
-  const extractedContent = data.data?.content || '';
+  let extractedContent = data.data?.content || '';
+  
+  // Replace [beginner-57] placeholder with a marker for component insertion
+  extractedContent = extractedContent.replace(/\[beginner-57\]/g, '<!-- BROKER_TABLE_PLACEHOLDER -->');
   
   pageData = {
     title: extractedTitle,
     content: extractedContent,
     excerpt: '',
-    meta_description: '',
+    meta_description: data.data?.meta_description || '',
     updated_at: new Date().toISOString()
   };
 
 } catch (err) {
-  console.error('Error fetching page data:', err);
-  error = err instanceof Error ? err.message : 'حدث خطأ في تحميل البيانات';
-  pageData = null;
+  console.error('API fetch failed, using fallback data:', err);
+  
+  // Fallback to cached data if API fails
+  const cachedData = pageCache[apiSlug as keyof typeof pageCache];
+  
+  if (cachedData) {
+    let processedContent = cachedData.content;
+    processedContent = processedContent.replace(/\[beginner-57\]/g, '<!-- BROKER_TABLE_PLACEHOLDER -->');
+    
+    pageData = {
+      title: cachedData.title,
+      content: processedContent,
+      excerpt: '',
+      meta_description: cachedData.meta_description,
+      updated_at: cachedData.updated_at
+    };
+  } else {
+    error = err instanceof Error ? err.message : 'حدث خطأ في تحميل البيانات';
+    pageData = null;
+  }
 }
 ---
 
@@ -119,7 +145,14 @@ try {
         <!-- Dynamic Content Section -->
         <main class="content-main">
           <article class="content-article">
-            <div class="content-body" set:html={pageData.content}></div>
+            <div class="content-body">
+              {pageData.content.split('<!-- BROKER_TABLE_PLACEHOLDER -->').map((part, index, array) => (
+                <>
+                  <div set:html={part}></div>
+                  {index < array.length - 1 && <BrokerTable />}
+                </>
+              ))}
+            </div>
           </article>
           
           <aside class="content-sidebar">
@@ -153,803 +186,6 @@ try {
   </div>
 </BaseLayout>
 
-<style>
-  /* All your existing styles remain the same */
-  
-  /* Additional styles for the dynamic broker section */
-  .brokers-section {
-    margin: 3rem 0;
-    padding: 2rem 0;
-    background: var(--bg-secondary);
-    border-radius: 1rem;
-  }
 
-  .section-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 0 2rem;
-  }
 
-  .section-header h2 {
-    font-size: 2rem;
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-    font-weight: 700;
-  }
 
-  .section-header p {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-    margin: 0;
-  }
-
-  .companies-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 2rem;
-  }
-  
-  .company-card {
-    background: white;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    transition: transform 0.2s, box-shadow 0.2s;
-    border: 1px solid var(--border-color);
-  }
-  
-  .company-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-  }
-
-  .company-placeholder {
-    width: 100%;
-    height: 180px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-  }
-  
-  .placeholder-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-  }
-  
-  .placeholder-content svg {
-    opacity: 0.9;
-  }
-  
-  .placeholder-content span {
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  .company-content {
-    padding: 1.5rem;
-  }
-  
-  .company-content h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: var(--text-primary);
-  }
-  
-  .company-content p {
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
-    line-height: 1.6;
-  }
-
-  .company-features {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .feature {
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-
-  /* Loading and Error States */
-  .loading-state, .error-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
-    text-align: center;
-  }
-
-  .loading-spinner {
-    width: 48px;
-    height: 48px;
-    border: 4px solid var(--border-color);
-    border-top: 4px solid var(--primary-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  .error-content {
-    max-width: 400px;
-    color: #dc2626;
-  }
-
-  .error-content svg {
-    margin-bottom: 1rem;
-    color: #dc2626;
-  }
-
-  .retry-button {
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    font-family: inherit;
-    font-weight: 500;
-    cursor: pointer;
-    margin-top: 1rem;
-    transition: background-color 0.2s;
-  }
-
-  .retry-button:hover {
-    background: var(--secondary-color);
-  }
-
-  /* Modern Page Header */
-  .page-header {
-    text-align: center;
-    margin-bottom: 4rem;
-    padding: 3rem 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 1.5rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .page-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-    opacity: 0.1;
-  }
-
-  .header-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  .badge {
-    display: inline-block;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 2rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    margin-bottom: 1rem;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .page-header h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    font-weight: 800;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-
-  .subtitle {
-    font-size: 1.25rem;
-    opacity: 0.9;
-    max-width: 600px;
-    margin: 0 auto 2rem;
-    line-height: 1.6;
-  }
-
-  .header-meta {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .meta-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    opacity: 0.8;
-  }
-
-  /* Animations */
-  .fade-in {
-    animation: fadeInUp 0.8s ease-out;
-  }
-
-  .fade-in-delay {
-    animation: fadeInUp 0.8s ease-out 0.2s both;
-  }
-
-  .fade-in-delay-2 {
-    animation: fadeInUp 0.8s ease-out 0.4s both;
-  }
-
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Modern Content Layout */
-  .content-main {
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 3rem;
-    margin-bottom: 3rem;
-  }
-
-  .content-article {
-    background: white;
-    border-radius: 1rem;
-    padding: 3rem;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
-  }
-
-  .content-body {
-    color: var(--text-primary);
-    line-height: 1.8;
-    font-size: 1.1rem;
-  }
-
-  .content-body h1, .content-body h2, .content-body h3 {
-    color: var(--primary-color);
-    margin: 2rem 0 1rem;
-    font-weight: 700;
-  }
-
-  .content-body h1 { font-size: 2rem; }
-  .content-body h2 { font-size: 1.75rem; }
-  .content-body h3 { font-size: 1.5rem; }
-
-  .content-body p {
-    margin-bottom: 1.5rem;
-  }
-
-  .content-body ul, .content-body ol {
-    margin: 1.5rem 0;
-    padding-right: 2rem;
-  }
-
-  .content-body li {
-    margin-bottom: 0.5rem;
-  }
-
-  .content-body a {
-    color: var(--primary-color);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s;
-  }
-
-  .content-body a:hover {
-    border-bottom-color: var(--primary-color);
-  }
-
-  .content-body blockquote {
-    background: var(--bg-secondary);
-    border-right: 4px solid var(--primary-color);
-    padding: 1.5rem;
-    margin: 2rem 0;
-    border-radius: 0.5rem;
-    font-style: italic;
-    color: var(--text-secondary);
-  }
-
-  /* Sidebar */
-  .content-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-  }
-
-  .sidebar-card {
-    background: white;
-    border-radius: 1rem;
-    padding: 2rem;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
-    position: sticky;
-    top: 2rem;
-  }
-
-  .sidebar-card h3 {
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-    font-size: 1.25rem;
-    font-weight: 600;
-  }
-
-  .info-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .info-list li {
-    padding: 0.75rem;
-    background: var(--bg-secondary);
-    margin-bottom: 0.5rem;
-    border-radius: 0.5rem;
-    color: var(--text-primary);
-    font-weight: 500;
-    position: relative;
-    padding-right: 2.5rem;
-  }
-
-  .info-list li::before {
-    content: '✓';
-    position: absolute;
-    right: 0.75rem;
-    color: var(--primary-color);
-    font-weight: bold;
-  }
-
-  /* Responsive */
-  @media (max-width: 1024px) {
-    .content-main {
-      grid-template-columns: 1fr;
-      gap: 2rem;
-    }
-    
-    .sidebar-card {
-      position: static;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .page-header {
-      padding: 2rem 1rem;
-      margin-bottom: 2rem;
-    }
-    
-    .page-header h1 {
-      font-size: 2rem;
-    }
-
-    .header-meta {
-      flex-direction: column;
-      gap: 1rem;
-    }
-    
-    .content-article {
-      padding: 2rem;
-    }
-
-    .content-body {
-      font-size: 1rem;
-    }
-    
-    .sidebar-card {
-      padding: 1.5rem;
-    }
-
-    .companies-grid {
-      grid-template-columns: 1fr;
-      padding: 0 1rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .page-header {
-      padding: 1.5rem 0.5rem;
-    }
-    
-    .page-header h1 {
-      font-size: 1.75rem;
-    }
-
-    .content-article {
-      padding: 1.5rem;
-    }
-
-    .sidebar-card {
-      padding: 1rem;
-    }
-
-    .meta-item {
-      font-size: 0.8rem;
-    }
-
-    .badge {
-      font-size: 0.75rem;
-      padding: 0.375rem 0.75rem;
-    }
-  }
-</style>
-
-<script>
-  // Import the BeginnerBrokerTable component HTML
-  const beginnerTableHTML = `
-    <div class="broker-table-wrapper">
-      <table class="broker-table">
-        <thead>
-          <tr class="table-header">
-            <th class="header-cell company-header">الشركة</th>
-            <th class="header-cell deposit-header">أقل مبلغ للإيداع</th>
-            <th class="header-cell rating-header">التقييم</th>
-          </tr>
-        </thead>
-        
-        <tbody>
-          <tr class="broker-row">
-            <td class="broker-cell company-cell">
-              <div class="company-info">
-                <div class="company-logo" style="background: #1e40af">
-                  <span class="logo-text">Evest</span>
-                </div>
-                <span class="company-name">Evest</span>
-              </div>
-            </td>
-            <td class="broker-cell deposit-cell">
-              <span class="deposit-amount">50</span>
-            </td>
-            <td class="broker-cell rating-cell">
-              <span class="rating-value">4.5/5</span>
-            </td>
-          </tr>
-
-          <tr class="broker-row">
-            <td class="broker-cell company-cell">
-              <div class="company-info">
-                <div class="company-logo" style="background: #4f46e5">
-                  <span class="logo-text">AvaTrade</span>
-                </div>
-                <span class="company-name">AvaTrade</span>
-              </div>
-            </td>
-            <td class="broker-cell deposit-cell">
-              <span class="deposit-amount">100</span>
-            </td>
-            <td class="broker-cell rating-cell">
-              <span class="rating-value">4/5</span>
-            </td>
-          </tr>
-
-          <tr class="broker-row">
-            <td class="broker-cell company-cell">
-              <div class="company-info">
-                <div class="company-logo" style="background: #dc2626">
-                  <span class="logo-text">XTB</span>
-                </div>
-                <span class="company-name">XTB</span>
-              </div>
-            </td>
-            <td class="broker-cell deposit-cell">
-              <span class="deposit-amount">100</span>
-            </td>
-            <td class="broker-cell rating-cell">
-              <span class="rating-value">4/5</span>
-            </td>
-          </tr>
-
-          <tr class="broker-row">
-            <td class="broker-cell company-cell">
-              <div class="company-info">
-                <div class="company-logo" style="background: #fbbf24; color: #1f2937">
-                  <span class="logo-text">Exness</span>
-                </div>
-                <span class="company-name">Exness</span>
-              </div>
-            </td>
-            <td class="broker-cell deposit-cell">
-              <span class="deposit-amount">10</span>
-            </td>
-            <td class="broker-cell rating-cell">
-              <span class="rating-value">4.5/5</span>
-            </td>
-          </tr>
-        </tbody>
-
-        <tfoot>
-          <tr>
-            <td colspan="3" class="table-footer">
-              <div class="footer-content">
-                <span class="footer-icon">⚡</span>
-                <span class="footer-text">أفضل شركات التداول للمبتدئين</span>
-              </div>
-            </td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  `;
-
-  // BeginnerBrokerTable CSS styles
-  const beginnerTableStyles = `
-    <style id="beginner-table-styles">
-      .broker-table-wrapper {
-        width: 100%;
-        max-width: 800px;
-        margin: 2rem auto;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        background: white;
-      }
-
-      .broker-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .table-header {
-        background: #e5e7eb;
-      }
-
-      .header-cell {
-        padding: 16px 20px;
-        font-weight: 600;
-        color: #374151;
-        font-size: 14px;
-        text-align: center;
-        border: none;
-      }
-
-      .company-header {
-        text-align: right;
-        width: 40%;
-      }
-
-      .deposit-header,
-      .rating-header {
-        width: 30%;
-      }
-
-      .broker-row:hover {
-        background: #f8fafc;
-      }
-
-      .broker-cell {
-        padding: 20px;
-        border-bottom: 1px solid #f3f4f6;
-        text-align: center;
-        vertical-align: middle;
-      }
-
-      .company-cell {
-        text-align: right;
-      }
-
-      .company-info {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-      }
-
-      .company-name {
-        font-weight: 600;
-        font-size: 16px;
-        color: #2563eb;
-      }
-
-      .company-logo {
-        /* width: 48px; */
-        height: 48px;
-        min-width: 48px;
-        min-height: 48px;
-        /* max-width: 48px; */
-        max-height: 48px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: 700;
-        font-size: 10px;
-        text-align: center;
-        flex-shrink: 0;
-      }
-
-      .logo-text {
-        line-height: 1;
-      }
-
-      .deposit-amount {
-        font-weight: 700;
-        font-size: 18px;
-        color: #111827;
-      }
-
-      .rating-value {
-        font-weight: 600;
-        font-size: 16px;
-        color: #2563eb;
-      }
-
-      .table-footer {
-        background: #e5e7eb;
-        padding: 16px 20px;
-      }
-
-      .footer-content {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-
-      .footer-icon {
-        font-size: 16px;
-      }
-
-      .footer-text {
-        font-weight: 600;
-        color: #374151;
-        font-size: 14px;
-      }
-
-      @media (max-width: 768px) {
-        .broker-table-wrapper {
-          margin: 1rem;
-          border-radius: 12px;
-        }
-
-        .header-cell,
-        .broker-cell {
-          padding: 12px 16px;
-        }
-
-        .company-info {
-          gap: 12px;
-        }
-
-        .company-name {
-          font-size: 14px;
-        }
-
-        .company-logo {
-          width: 40px;
-          height: 40px;
-          min-width: 40px;
-          min-height: 40px;
-          max-width: 40px;
-          max-height: 40px;
-          font-size: 9px;
-        }
-
-        .deposit-amount {
-          font-size: 16px;
-        }
-
-        .rating-value {
-          font-size: 14px;
-        }
-
-        .header-cell,
-        .footer-text {
-          font-size: 12px;
-        }
-      }
-
-      @media (max-width: 480px) {
-        .header-cell,
-        .broker-cell {
-          padding: 10px 12px;
-        }
-
-        .company-info {
-          gap: 8px;
-        }
-
-        .company-name {
-          font-size: 13px;
-        }
-
-        .company-logo {
-          width: 36px;
-          height: 36px;
-          min-width: 36px;
-          min-height: 36px;
-          max-width: 36px;
-          max-height: 36px;
-          font-size: 8px;
-        }
-
-        .deposit-amount {
-          font-size: 15px;
-        }
-
-        .rating-value {
-          font-size: 13px;
-        }
-      }
-    </style>
-  `;
-
-  // Function to replace placeholders in content
-  function replacePlaceholders() {
-    const contentBody = document.querySelector('.content-body');
-    if (!contentBody) return;
-
-    let content = contentBody.innerHTML;
-    
-    // Replace [beginner-57] placeholder with fallback (only if Worker didn't process it)
-    if (content.includes('[beginner-57]')) {
-      // Add styles if not already added
-      if (!document.getElementById('beginner-table-styles')) {
-        document.head.insertAdjacentHTML('beforeend', beginnerTableStyles);
-      }
-      
-      // Replace the placeholder with fallback table HTML
-      content = content.replace(/\[beginner-57\]/g, beginnerTableHTML);
-      contentBody.innerHTML = content;
-      
-      console.log('Replaced [beginner-57] placeholder with fallback BeginnerBrokerTable (Worker not available)');
-    }
-
-    // If dynamic content exists, check and add styles
-    if (document.querySelector('.broker-table-wrapper')) {
-      if (!document.getElementById('beginner-table-styles')) {
-        document.head.insertAdjacentHTML('beforeend', beginnerTableStyles);
-      }
-    }
-  }
-
-  // Replace placeholders when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', replacePlaceholders);
-  } else {
-    replacePlaceholders();
-  }
-
-  // Also run after a short delay to handle dynamic content
-  setTimeout(replacePlaceholders, 500);
-
-  // Check for dynamic broker tables and add styles immediately
-  function checkForDynamicTables() {
-    if (document.querySelector('.broker-table-wrapper')) {
-      if (!document.getElementById('beginner-table-styles')) {
-        document.head.insertAdjacentHTML('beforeend', beginnerTableStyles);
-        console.log('Added BeginnerBrokerTable styles for dynamic content');
-      }
-    }
-  }
-
-  // Run checks multiple times to catch dynamic content
-  checkForDynamicTables();
-  setTimeout(checkForDynamicTables, 100);
-  setTimeout(checkForDynamicTables, 500);
-  setTimeout(checkForDynamicTables, 1000);
-</script>
