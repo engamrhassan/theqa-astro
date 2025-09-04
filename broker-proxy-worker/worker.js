@@ -1,14 +1,157 @@
-// Enhanced Cloudflare Worker with improved caching strategies
+// Cache monitoring and analytics system
+class CacheMonitor {
+  constructor(env) {
+    this.env = env;
+    this.metrics = {
+      hits: 0,
+      misses: 0,
+      errors: 0,
+      countries: new Map(),
+      routes: new Map()
+    };
+  }
+
+  // Track cache performance
+  async trackCacheHit(country, route, cacheKey) {
+    this.metrics.hits++;
+    this.trackCountry(country);
+    this.trackRoute(route);
+    
+    // Store metrics in KV for persistence
+    await this.persistMetrics();
+  }
+
+  async trackCacheMiss(country, route, reason = 'expired') {
+    this.metrics.misses++;
+    this.trackCountry(country);
+    this.trackRoute(route);
+    
+    console.log(`Cache miss for ${country}/${route}: ${reason}`);
+    await this.persistMetrics();
+  }
+
+  trackCountry(country) {
+    const count = this.metrics.countries.get(country) || 0;
+    this.metrics.countries.set(country, count + 1);
+  }
+
+  trackRoute(route) {
+    const count = this.metrics.routes.get(route) || 0;
+    this.metrics.routes.set(route, count + 1);
+  }
+
+  async persistMetrics() {
+    try {
+      const metricsData = {
+        timestamp: Date.now(),
+        hits: this.metrics.hits,
+        misses: this.metrics.misses,
+        hitRate: this.metrics.hits / (this.metrics.hits + this.metrics.misses) || 0,
+        countries: Object.fromEntries(this.metrics.countries),
+        routes: Object.fromEntries(this.metrics.routes)
+      };
+
+      // Store in KV with 24h TTL
+      await this.env.CACHE?.put('metrics:daily', JSON.stringify(metricsData), {
+        expirationTtl: 86400
+      });
+    } catch (error) {
+      console.error('Failed to persist metrics:', error);
+    }
+  }
+
+  async getMetrics() {
+    try {
+      const cached = await this.env.CACHE?.get('metrics:daily', { type: 'json' });
+      return cached || this.metrics;
+    } catch (error) {
+      return this.metrics;
+    }
+  }
+
+  // Generate cache health report
+  async generateHealthReport() {
+    const metrics = await this.getMetrics();
+    const hitRate = (metrics.hits / (metrics.hits + metrics.misses) * 100) || 0;
+    
+    return {
+      status: hitRate > 70 ? 'healthy' : hitRate > 50 ? 'warning' : 'critical',
+      hitRate: `${hitRate.toFixed(2)}%`,
+      totalRequests: metrics.hits + metrics.misses,
+      topCountries: Object.entries(metrics.countries || {})
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5),
+      topRoutes: Object.entries(metrics.routes || {})
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5),
+      recommendations: this.generateRecommendations(hitRate, metrics),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  generateRecommendations(hitRate, metrics) {
+    const recommendations = [];
+    
+    if (hitRate < 50) {
+      recommendations.push('Consider increasing cache TTL for static broker data');
+    }
+    
+    if (metrics.misses > metrics.hits * 2) {
+      recommendations.push('Review cache invalidation strategy - too many cache misses');
+    }
+    
+    if (hitRate > 90) {
+      recommendations.push('Excellent cache performance! Consider expanding cache coverage');
+    }
+    
+    return recommendations;
+  }
+}
+
+// Enhanced Cloudflare Worker with improved caching strategies and monitoring
 export default {
   async fetch(request, env, ctx) {
+    const monitor = new CacheMonitor(env);
+    
     try {
       const url = new URL(request.url);
       const userCountry = request.cf?.country || 'US';
       const cacheKey = `broker-data-${userCountry}-v2`;
       
+      // Health check endpoint
+      if (url.pathname === '/__health') {
+        const healthReport = await monitor.generateHealthReport();
+        return new Response(JSON.stringify(healthReport, null, 2), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Metrics endpoint
+      if (url.pathname === '/__metrics') {
+        const metrics = await monitor.getMetrics();
+        return new Response(JSON.stringify(metrics, null, 2), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
       // Enhanced cache purge endpoint
       if (url.pathname === '/__purge-cache' && request.method === 'POST') {
         return handleCachePurge(request, url, env);
+      }
+      
+      // Cache warming endpoint
+      if (url.pathname === '/__warm-cache' && request.method === 'POST') {
+        return handleWarmCache(request, env);
+      }
+      
+      // Debug endpoint (useful for development)
+      if (url.pathname === '/__debug') {
+        return handleDebug(env, request);
+      }
+
+      // Cache status endpoint
+      if (url.pathname === '/__cache-status') {
+        return handleCacheStatus(env, request, userCountry);
       }
       
       // Skip processing for static assets with enhanced detection
@@ -23,12 +166,18 @@ export default {
         return fetch(request);
       }
 
+      // Track processing time
+      const startTime = Date.now();
+      
       // Try to get cached broker data first
       let brokerData = await getCachedBrokerData(env.CACHE, cacheKey);
       let unsupportedBrokers = [];
+      let cacheHit = !!brokerData;
       
       if (!brokerData) {
-        // Fetch fresh data and cache it
+        // Cache miss - track and fetch fresh data
+        await monitor.trackCacheMiss(userCountry, url.pathname, 'not-found');
+        
         [brokerData, unsupportedBrokers] = await Promise.all([
           getBrokersForCountry(env.DB, userCountry),
           getUnsupportedBrokers(env.DB, userCountry)
@@ -37,18 +186,23 @@ export default {
         // Cache the broker data for 30 minutes
         await cacheBrokerData(env.CACHE, cacheKey, { brokerData, unsupportedBrokers });
       } else {
+        // Cache hit - track success
+        await monitor.trackCacheHit(userCountry, url.pathname, cacheKey);
+        
         unsupportedBrokers = brokerData.unsupportedBrokers || [];
         brokerData = brokerData.brokerData || [];
       }
+      
+      const processingTime = Date.now() - startTime;
 
       // Fetch original page with edge caching
       const cacheKeyForPage = `page-${url.pathname}-${userCountry}`;
       let response = await env.CACHE?.get(cacheKeyForPage, { type: 'stream' });
       
       if (!response) {
-        const originalResponse = await fetch(request);
-        if (!originalResponse.ok) {
-          return originalResponse;
+      const originalResponse = await fetch(request);
+      if (!originalResponse.ok) {
+        return originalResponse;
         }
         
         // Store in cache for 1 hour
@@ -81,6 +235,8 @@ export default {
           'X-Broker-Count': brokerData.length.toString(),
           'X-Unsupported-Count': unsupportedBrokers.length.toString(),
           'X-Cache-Key': cacheKey,
+          'X-Cache-Hit': cacheHit.toString(),
+          'X-Processing-Time': processingTime.toString(),
           'Vary': 'CF-IPCountry',
           'X-Frame-Options': 'SAMEORIGIN',
           'X-Content-Type-Options': 'nosniff',
@@ -90,6 +246,9 @@ export default {
       });
 
     } catch (error) {
+      monitor.metrics.errors++;
+      await monitor.persistMetrics();
+      
       console.error('Worker error:', error);
       // Enhanced error handling with fallback
       return createErrorResponse(error, request);
@@ -353,7 +512,7 @@ function injectBrokerData(html, brokers, countryCode, unsupportedBrokers = []) {
     // Create country data script
     const countryName = getCountryName(countryCode);
     const countryDataScript = `
-      <script>
+    <script>
         window.USER_COUNTRY = '${countryCode}';
         window.COUNTRY_NAME = '${countryName}';
         window.UNSUPPORTED_BROKERS = ${JSON.stringify(unsupportedBrokers)};
@@ -362,8 +521,8 @@ function injectBrokerData(html, brokers, countryCode, unsupportedBrokers = []) {
           brokers: ${brokers.length},
           unsupported: ${unsupportedBrokers.length}
         });
-      </script>
-    `;
+    </script>
+  `;
     
     // Try to inject in head, otherwise before closing body
     if (html.includes('</head>')) {
@@ -573,4 +732,283 @@ function getCountryName(countryCode = 'SA') {
   };
   
   return countryNames[countryCode] || 'بلدك';
+}
+
+// Cache warming function (run via cron trigger)
+export async function warmCache(env) {
+  const countries = ['US', 'GB', 'DE', 'SA', 'AE', 'EG', 'FR', 'ES', 'IT', 'TH', 'KW', 'BH', 'QA', 'OM', 'JO'];
+  const routes = [
+    '/شركات-تداول-مرخصة-في-السعودية',
+    '/منصات-تداول-العملات-الرقمية-في-الإمارات',
+    '/reviews'
+  ];
+
+  console.log('Starting cache warming...');
+  
+  const warmPromises = [];
+  
+  for (const country of countries) {
+    for (const route of routes) {
+      warmPromises.push(
+        warmCacheForCountryRoute(env, country, route)
+      );
+    }
+  }
+
+  const results = await Promise.allSettled(warmPromises);
+  const successful = results.filter(r => r.status === 'fulfilled').length;
+  const failed = results.filter(r => r.status === 'rejected').length;
+
+  console.log(`Cache warming completed: ${successful} successful, ${failed} failed`);
+  
+  // Store warming results in metrics
+  const warmingReport = {
+    timestamp: Date.now(),
+    successful,
+    failed,
+    total: warmPromises.length,
+    countries: countries.length,
+    routes: routes.length
+  };
+
+  try {
+    await env.CACHE?.put('warming:last-run', JSON.stringify(warmingReport), {
+      expirationTtl: 86400 // 24 hours
+    });
+  } catch (error) {
+    console.error('Failed to store warming report:', error);
+  }
+  
+  return warmingReport;
+}
+
+async function warmCacheForCountryRoute(env, country, route) {
+  try {
+    const cacheKey = `broker-data-${country}-v2`;
+    
+    // Check if already cached and fresh
+    const existing = await getCachedBrokerData(env.CACHE, cacheKey);
+    if (existing) {
+      console.log(`Cache already warm for ${country}${route}`);
+      return;
+    }
+
+    // Warm the cache
+    const [brokerData, unsupportedBrokers] = await Promise.all([
+      getBrokersForCountry(env.DB, country),
+      getUnsupportedBrokers(env.DB, country)
+    ]);
+
+    await cacheBrokerData(env.CACHE, cacheKey, { brokerData, unsupportedBrokers });
+    
+    console.log(`✅ Warmed cache for ${country}${route} (${brokerData.length} brokers, ${unsupportedBrokers.length} restrictions)`);
+  } catch (error) {
+    console.error(`❌ Failed to warm cache for ${country}${route}:`, error);
+    throw error;
+  }
+}
+
+// Cache warming endpoint (manual trigger)
+export async function handleWarmCache(request, env) {
+  try {
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader !== `Bearer ${env.PURGE_TOKEN}`) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const warmingResult = await warmCache(env);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Cache warming completed',
+      ...warmingResult
+    }, null, 2), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    return new Response(JSON.stringify({
+      error: error.message,
+      success: false
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Debug handler for development
+async function handleDebug(env, request) {
+  const url = new URL(request.url);
+  const country = url.searchParams.get('country') || request.cf?.country || 'US';
+  
+  try {
+    const debug = {
+      request: {
+        country: request.cf?.country,
+        colo: request.cf?.colo,
+        timezone: request.cf?.timezone,
+        requestedCountry: country,
+        userAgent: request.headers.get('User-Agent'),
+        ip: request.headers.get('CF-Connecting-IP')
+      },
+      cache: {
+        keys: getCacheKeys(country),
+        brokerDataKey: `broker-data-${country}-v2`
+      },
+      database: {
+        brokersCount: 0,
+        countrySortingCount: 0,
+        unsupportedCount: 0
+      },
+      worker: {
+        timestamp: new Date().toISOString(),
+        version: '2.0-enhanced'
+      }
+    };
+
+    // Get database stats
+    try {
+      const [brokersResult, sortingResult, unsupportedResult] = await Promise.all([
+        env.DB.prepare('SELECT COUNT(*) as count FROM brokers WHERE is_active = 1').first(),
+        env.DB.prepare('SELECT COUNT(*) as count FROM country_sorting WHERE country_code = ?').bind(country).first(),
+        env.DB.prepare('SELECT COUNT(*) as count FROM unsupported_countries WHERE country_code = ? AND is_active = 1').bind(country).first()
+      ]);
+
+      debug.database.brokersCount = brokersResult?.count || 0;
+      debug.database.countrySortingCount = sortingResult?.count || 0;
+      debug.database.unsupportedCount = unsupportedResult?.count || 0;
+    } catch (error) {
+      debug.database.error = error.message;
+    }
+
+    // Get cache status
+    try {
+      const cachedData = await getCachedBrokerData(env.CACHE, debug.cache.brokerDataKey);
+      debug.cache.status = {
+        cached: !!cachedData,
+        dataAge: cachedData ? getDataAge(cachedData) : null,
+        brokerCount: cachedData?.brokerData?.length || 0,
+        restrictionCount: cachedData?.unsupportedBrokers?.length || 0
+      };
+    } catch (error) {
+      debug.cache.error = error.message;
+    }
+
+    return new Response(JSON.stringify(debug, null, 2), {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Cache status handler
+async function handleCacheStatus(env, request, userCountry) {
+  try {
+    const cacheKey = `broker-data-${userCountry}-v2`;
+    
+    const [cachedData, metrics] = await Promise.all([
+      getCachedBrokerData(env.CACHE, cacheKey),
+      env.CACHE?.get('metrics:daily', { type: 'json' })
+    ]);
+
+    const status = {
+      country: userCountry,
+      cacheKey,
+      cached: !!cachedData,
+      dataAge: cachedData ? getDataAge(cachedData) : null,
+      brokerCount: cachedData?.brokerData?.length || 0,
+      restrictionCount: cachedData?.unsupportedBrokers?.length || 0,
+      hitRate: metrics ? calculateHitRate(metrics) : 'N/A',
+      recommendations: generateCacheRecommendations(cachedData, metrics),
+      timestamp: new Date().toISOString()
+    };
+
+    return new Response(JSON.stringify(status, null, 2), {
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
+  } catch (error) {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+// Helper functions for new endpoints
+function getCacheKeys(country) {
+  return [
+    `broker-data-${country}-v2`,
+    `page-/reviews-${country}`,
+    `page-/شركات-تداول-مرخصة-في-السعودية-${country}`,
+    `page-/منصات-تداول-العملات-الرقمية-في-الإمارات-${country}`,
+    'metrics:daily',
+    'warming:last-run'
+  ];
+}
+
+function getDataAge(cachedData) {
+  if (cachedData.timestamp) {
+    const ageMs = Date.now() - cachedData.timestamp;
+    const ageMinutes = Math.floor(ageMs / 60000);
+    const ageHours = Math.floor(ageMinutes / 60);
+    
+    if (ageHours > 0) {
+      return `${ageHours}h ${ageMinutes % 60}m`;
+    }
+    return `${ageMinutes}m`;
+  }
+  return 'unknown';
+}
+
+function calculateHitRate(metrics) {
+  const total = (metrics.hits || 0) + (metrics.misses || 0);
+  if (total === 0) return 'N/A';
+  return `${((metrics.hits || 0) / total * 100).toFixed(1)}%`;
+}
+
+function generateCacheRecommendations(cachedData, metrics) {
+  const recommendations = [];
+  
+  if (!cachedData) {
+    recommendations.push('Cache is empty - consider warming cache for this country');
+  }
+  
+  if (metrics) {
+    const hitRate = parseFloat(calculateHitRate(metrics).replace('%', ''));
+    if (hitRate < 50) {
+      recommendations.push('Low hit rate - consider increasing cache TTL');
+    } else if (hitRate > 90) {
+      recommendations.push('Excellent cache performance!');
+    }
+  }
+  
+  if (cachedData?.brokerData?.length === 0) {
+    recommendations.push('No broker data found - check database configuration');
+  }
+  
+  if (cachedData && getDataAge(cachedData).includes('h')) {
+    recommendations.push('Cache data is getting old - will refresh soon');
+  }
+  
+  return recommendations.length > 0 ? recommendations : ['Cache performance looks good'];
 }
