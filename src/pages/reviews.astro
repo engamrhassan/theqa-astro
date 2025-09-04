@@ -64,7 +64,7 @@ async function fetchReviewBrokers(): Promise<ReviewBroker[]> {
     }
     
     const data = await response.json();
-    const reviewsArray = Array.isArray(data) ? data : (data.reviews || data.data || []);
+    const reviewsArray = Array.isArray(data) ? data : (data.companies || data.reviews || data.data || []);
     
     // Transform reviews data to broker card format
     return reviewsArray.map((item: any) => ({
