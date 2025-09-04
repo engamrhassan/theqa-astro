@@ -183,8 +183,8 @@ export default {
           getUnsupportedBrokers(env.DB, userCountry)
         ]);
         
-        // Cache the broker data for 30 minutes
-        await cacheBrokerData(env.CACHE, cacheKey, { brokerData, unsupportedBrokers });
+        // Cache the broker data with configurable TTL
+        await cacheBrokerData(env.CACHE, cacheKey, { brokerData, unsupportedBrokers }, env.BROKER_CACHE_TTL || 1800);
       } else {
         // Cache hit - track success
         await monitor.trackCacheHit(userCountry, url.pathname, cacheKey);
@@ -272,7 +272,7 @@ async function getCachedBrokerData(cache, key) {
   }
 }
 
-async function cacheBrokerData(cache, key, data) {
+async function cacheBrokerData(cache, key, data, ttl = 1800) {
   try {
     if (!cache) return;
     
@@ -280,7 +280,7 @@ async function cacheBrokerData(cache, key, data) {
       data,
       timestamp: Date.now()
     }), {
-      expirationTtl: 1800 // 30 minutes
+      expirationTtl: ttl // Configurable TTL
     });
   } catch (error) {
     console.error('Cache write error:', error);
@@ -1011,4 +1011,30 @@ function generateCacheRecommendations(cachedData, metrics) {
   }
   
   return recommendations.length > 0 ? recommendations : ['Cache performance looks good'];
+}
+
+// Cron handler for scheduled cache warming
+export async function scheduled(event, env, ctx) {
+  try {
+    console.log('Cron trigger: Starting scheduled cache warming');
+    
+    // Warm cache for all major countries
+    const result = await warmCache(env);
+    
+    console.log('Cron trigger: Cache warming completed', result);
+    
+    // Store the warming report
+    if (env.CACHE) {
+      await env.CACHE.put('warming:last-cron', JSON.stringify({
+        timestamp: new Date().toISOString(),
+        trigger: 'cron',
+        ...result
+      }), {
+        expirationTtl: 86400 // 24 hours
+      });
+    }
+    
+  } catch (error) {
+    console.error('Cron trigger: Cache warming failed', error);
+  }
 }
