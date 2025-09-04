@@ -66,8 +66,9 @@ try {
   const extractedTitle = data.data?.name || '';
   let extractedContent = data.data?.content || '';
   
-  // Replace [beginner-57] placeholder with a marker for worker injection
+  // Replace placeholders with markers for worker injection
   extractedContent = extractedContent.replace(/\[beginner-57\]/g, '<!-- BEGINNER_BROKERS_PLACEHOLDER -->');
+  extractedContent = extractedContent.replace(/\[popular-58\]/g, '<!-- POPULAR_BROKERS_PLACEHOLDER -->');
   
   pageData = {
     title: extractedTitle,
@@ -86,6 +87,7 @@ try {
   if (cachedData) {
     let processedContent = cachedData.content;
     processedContent = processedContent.replace(/\[beginner-57\]/g, '<!-- BEGINNER_BROKERS_PLACEHOLDER -->');
+    processedContent = processedContent.replace(/\[popular-58\]/g, '<!-- POPULAR_BROKERS_PLACEHOLDER -->');
     
     pageData = {
       title: cachedData.title,
@@ -147,7 +149,8 @@ try {
           <article class="content-article">
             <div class="content-body">
               <!-- Content will be processed by Cloudflare Worker -->
-              <!-- Worker replaces [beginner-57] -> BEGINNER_BROKERS_PLACEHOLDER -> dynamic table -->
+              <!-- Worker replaces [beginner-57] -> BEGINNER_BROKERS_PLACEHOLDER -> dynamic beginner table -->
+              <!-- Worker replaces [popular-58] -> POPULAR_BROKERS_PLACEHOLDER -> dynamic popular table -->
               <div set:html={pageData.content}></div>
             </div>
           </article>
