@@ -13,3 +13,7 @@ routes = [
 binding = "DB"
 database_name = "broker-sorting-db"
 database_id = "ba34ff09-69bb-4c57-989b-92f07aa8015a"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "a6271f83f7fe4090ab82f3aea1c080fa"
