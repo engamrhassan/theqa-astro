@@ -11,8 +11,6 @@ CREATE TABLE brokers (
     company_id INTEGER,
     description TEXT,
     website_url TEXT,
-    investor_count TEXT, -- عدد المستثمرين (e.g., "1,000,000 users")
-    founding_year INTEGER, -- سنة التأسيس
     is_active BOOLEAN DEFAULT 1,
     default_sort_order INTEGER DEFAULT 999,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -67,11 +65,11 @@ CREATE INDEX idx_dynamic_routes ON dynamic_routes(is_active);
 CREATE INDEX idx_unsupported_countries ON unsupported_countries(broker_id, country_code, is_active);
 
 -- Sample broker data
-INSERT INTO brokers (name, slug, logo, rating, min_deposit, description, website_url, investor_count, founding_year, default_sort_order) VALUES
-('eVest', 'evest', '/images/brokers/evest-logo.png', 4.2, 250, 'Multi-regulated broker with competitive spreads', 'https://evest.com', '100,000 users', 2017, 1),
-('Exness', 'exness', '/images/brokers/exness-logo.png', 4.5, 10, 'Popular broker with low minimum deposit', 'https://exness.com', '1,000,000 users', 2002, 2),
-('AvaTrade', 'avatrade', '/images/brokers/avatrade-logo.png', 4.1, 100, 'Well-established broker with strong regulation', 'https://avatrade.com', '1,000,000 users', 2002, 3),
-('XTB', 'xtb', '/images/brokers/xtb-logo.png', 4.3, 250, 'European broker with excellent trading platform', 'https://xtb.com', '1,000,000 users', 2002, 4);
+INSERT INTO brokers (name, slug, logo, rating, min_deposit, description, website_url, default_sort_order) VALUES
+('eVest', 'evest', '/images/brokers/evest-logo.png', 4.2, 250, 'Multi-regulated broker with competitive spreads', 'https://evest.com', 1),
+('Exness', 'exness', '/images/brokers/exness-logo.png', 4.5, 10, 'Popular broker with low minimum deposit', 'https://exness.com', 2),
+('AvaTrade', 'avatrade', '/images/brokers/avatrade-logo.png', 4.1, 100, 'Well-established broker with strong regulation', 'https://avatrade.com', 3),
+('XTB', 'xtb', '/images/brokers/xtb-logo.png', 4.3, 250, 'European broker with excellent trading platform', 'https://xtb.com', 4);
 
 -- Sample country-specific sorting
 -- For United States (US)
