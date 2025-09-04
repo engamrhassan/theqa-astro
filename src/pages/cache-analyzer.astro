@@ -598,6 +598,7 @@
     </div>
 
     <script>
+        // Global variables
         const BASE_URL = window.location.origin;
         const TEST_URLS = [
             '/شركات-تداول-مرخصة-في-السعودية',
@@ -681,7 +682,8 @@
             }
         }
         
-        async function runSingleTest() {
+        // Global function declarations
+        window.runSingleTest = async function() {
             updateButton('runSingleTest()', true);
             
             const url = `${BASE_URL}${TEST_URLS[0]}?t=${Date.now()}`;
@@ -692,9 +694,9 @@
             saveData();
             
             updateButton('runSingleTest()', false);
-        }
+        };
         
-        async function runMultipleTests() {
+        window.runMultipleTests = async function() {
             updateButton('runMultipleTests()', true);
             
             for (let i = 0; i < 5; i++) {
@@ -710,9 +712,9 @@
             }
             
             updateButton('runMultipleTests()', false);
-        }
+        };
         
-        async function clearCacheAndTest() {
+        window.clearCacheAndTest = async function() {
             updateButton('clearCacheAndTest()', true);
             
             try {
@@ -737,13 +739,13 @@
                 
             } catch (error) {
                 console.error('Cache clear failed:', error);
-                await runSingleTest();
+                await window.runSingleTest();
             }
             
             updateButton('clearCacheAndTest()', false);
-        }
+        };
         
-        async function runConcurrentTests() {
+        window.runConcurrentTests = async function() {
             updateButton('runConcurrentTests()', true);
             
             const promises = [];
@@ -762,9 +764,9 @@
             updateAllDisplays();
             saveData();
             updateButton('runConcurrentTests()', false);
-        }
+        };
         
-        async function testDifferentPages() {
+        window.testDifferentPages = async function() {
             updateButton('testDifferentPages()', true);
             
             for (let i = 0; i < TEST_URLS.length; i++) {
@@ -782,9 +784,9 @@
             }
             
             updateButton('testDifferentPages()', false);
-        }
+        };
         
-        async function runLoadTest() {
+        window.runLoadTest = async function() {
             updateButton('runLoadTest()', true);
             
             const batchSize = 5;
@@ -816,9 +818,9 @@
             }
             
             updateButton('runLoadTest()', false);
-        }
+        };
         
-        async function testEndpoint(endpoint) {
+        window.testEndpoint = async function(endpoint) {
             const card = document.querySelector(`[onclick="testEndpoint('${endpoint}')"]`);
             const statusDiv = card.querySelector('div:last-child');
             
@@ -861,7 +863,137 @@
             }
             
             saveData();
-        }
+        };
+        
+        window.switchChart = function(type) {
+            currentChart = type;
+            
+            // Update button states
+            document.querySelectorAll('.chart-controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            updateChart();
+        };
+        
+        window.exportResults = function(format) {
+            if (testHistory.length === 0) {
+                alert('No data to export. Run some tests first!');
+                return;
+            }
+            
+            let content, filename, mimeType;
+            
+            if (format === 'json') {
+                content = JSON.stringify({
+                    testHistory,
+                    endpointResults,
+                    exportDate: new Date().toISOString(),
+                    summary: {
+                        totalTests: testHistory.length,
+                        avgResponseTime: Math.round(testHistory.reduce((sum, t) => sum + t.responseTime, 0) / testHistory.length),
+                        hitRate: Math.round(testHistory.filter(t => t.cacheStatus === 'HIT').length / testHistory.length * 100),
+                        successRate: Math.round(testHistory.filter(t => t.success).length / testHistory.length * 100)
+                    }
+                }, null, 2);
+                filename = `cache-analysis-${new Date().toISOString().split('T')[0]}.json`;
+                mimeType = 'application/json';
+            } else if (format === 'csv') {
+                const headers = ['Timestamp', 'URL', 'Response Time (ms)', 'Cache Status', 'Status Code', 'Country', 'Note'];
+                const rows = testHistory.map(test => [
+                    test.timestamp,
+                    test.url,
+                    test.responseTime,
+                    test.cacheStatus,
+                    test.status,
+                    test.country,
+                    test.note || ''
+                ]);
+                
+                content = [headers, ...rows].map(row => row.join(',')).join('\n');
+                filename = `cache-analysis-${new Date().toISOString().split('T')[0]}.csv`;
+                mimeType = 'text/csv';
+            }
+            
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+        
+        window.generateReport = function() {
+            if (testHistory.length === 0) {
+                alert('No data available for report generation.');
+                return;
+            }
+            
+            const recent = testHistory.slice(-50);
+            const avgTime = Math.round(recent.reduce((sum, t) => sum + t.responseTime, 0) / recent.length);
+            const hitRate = Math.round(recent.filter(t => t.cacheStatus === 'HIT').length / recent.length * 100);
+            const successRate = Math.round(recent.filter(t => t.success).length / recent.length * 100);
+            
+            const report = `
+# Cache Performance Analysis Report
+
+Generated: ${new Date().toLocaleString()}
+
+## Summary Statistics
+- **Total Tests**: ${testHistory.length}
+- **Average Response Time**: ${avgTime}ms
+- **Cache Hit Rate**: ${hitRate}%
+- **Success Rate**: ${successRate}%
+
+## Performance Analysis
+${avgTime < 200 ? '✅ **Excellent Performance** - Response times are very fast' :
+  avgTime < 500 ? '⚠️ **Good Performance** - Response times are acceptable but could be improved' :
+  '❌ **Poor Performance** - Response times need optimization'}
+
+${hitRate > 80 ? '✅ **Excellent Cache Efficiency** - Very high hit rate' :
+  hitRate > 60 ? '⚠️ **Moderate Cache Efficiency** - Cache hit rate could be improved' :
+  '❌ **Poor Cache Efficiency** - Low hit rate indicates caching issues'}
+
+## Recommendations
+${avgTime > 500 ? '- Optimize database queries and implement query caching\\n' : ''}
+${hitRate < 60 ? '- Review cache TTL settings and cache key strategies\\n' : ''}
+${successRate < 95 ? '- Investigate and resolve error conditions\\n' : ''}
+- Monitor performance trends over time
+- Consider implementing cache warming strategies
+- Review geographic performance variations
+
+## Recent Test History
+${recent.slice(-10).map((test, i) => 
+`${i + 1}. ${test.responseTime}ms - ${test.cacheStatus} - ${new Date(test.timestamp).toLocaleTimeString()}`
+).join('\\n')}
+
+---
+*Report generated by Enhanced Cache Performance Analyzer*
+            `.trim();
+            
+            const blob = new Blob([report], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cache-performance-report-${new Date().toISOString().split('T')[0]}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+        
+        window.clearAllData = function() {
+            if (confirm('Are you sure you want to clear all test data? This cannot be undone.')) {
+                testHistory = [];
+                endpointResults = {};
+                localStorage.removeItem('cacheAnalyzerData');
+                location.reload();
+            }
+        };
         
         function updateButton(onclick, loading) {
             document.querySelectorAll('button').forEach(btn => {
@@ -1099,18 +1231,6 @@
             `;
         }
         
-        function switchChart(type) {
-            currentChart = type;
-            
-            // Update button states
-            document.querySelectorAll('.chart-controls button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            updateChart();
-        }
-        
         function updateRecommendations() {
             if (testHistory.length < 3) return;
             
@@ -1149,124 +1269,6 @@
             if (recommendations.length > 0) {
                 document.getElementById('recommendations').style.display = 'block';
                 document.getElementById('rec-list').innerHTML = recommendations.map(r => `<li>${r}</li>`).join('');
-            }
-        }
-        
-        function exportResults(format) {
-            if (testHistory.length === 0) {
-                alert('No data to export. Run some tests first!');
-                return;
-            }
-            
-            let content, filename, mimeType;
-            
-            if (format === 'json') {
-                content = JSON.stringify({
-                    testHistory,
-                    endpointResults,
-                    exportDate: new Date().toISOString(),
-                    summary: {
-                        totalTests: testHistory.length,
-                        avgResponseTime: Math.round(testHistory.reduce((sum, t) => sum + t.responseTime, 0) / testHistory.length),
-                        hitRate: Math.round(testHistory.filter(t => t.cacheStatus === 'HIT').length / testHistory.length * 100),
-                        successRate: Math.round(testHistory.filter(t => t.success).length / testHistory.length * 100)
-                    }
-                }, null, 2);
-                filename = `cache-analysis-${new Date().toISOString().split('T')[0]}.json`;
-                mimeType = 'application/json';
-            } else if (format === 'csv') {
-                const headers = ['Timestamp', 'URL', 'Response Time (ms)', 'Cache Status', 'Status Code', 'Country', 'Note'];
-                const rows = testHistory.map(test => [
-                    test.timestamp,
-                    test.url,
-                    test.responseTime,
-                    test.cacheStatus,
-                    test.status,
-                    test.country,
-                    test.note || ''
-                ]);
-                
-                content = [headers, ...rows].map(row => row.join(',')).join('\n');
-                filename = `cache-analysis-${new Date().toISOString().split('T')[0]}.csv`;
-                mimeType = 'text/csv';
-            }
-            
-            const blob = new Blob([content], { type: mimeType });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-        
-        function generateReport() {
-            if (testHistory.length === 0) {
-                alert('No data available for report generation.');
-                return;
-            }
-            
-            const recent = testHistory.slice(-50);
-            const avgTime = Math.round(recent.reduce((sum, t) => sum + t.responseTime, 0) / recent.length);
-            const hitRate = Math.round(recent.filter(t => t.cacheStatus === 'HIT').length / recent.length * 100);
-            const successRate = Math.round(recent.filter(t => t.success).length / recent.length * 100);
-            
-            const report = `
-# Cache Performance Analysis Report
-
-Generated: ${new Date().toLocaleString()}
-
-## Summary Statistics
-- **Total Tests**: ${testHistory.length}
-- **Average Response Time**: ${avgTime}ms
-- **Cache Hit Rate**: ${hitRate}%
-- **Success Rate**: ${successRate}%
-
-## Performance Analysis
-${avgTime < 200 ? '✅ **Excellent Performance** - Response times are very fast' :
-  avgTime < 500 ? '⚠️ **Good Performance** - Response times are acceptable but could be improved' :
-  '❌ **Poor Performance** - Response times need optimization'}
-
-${hitRate > 80 ? '✅ **Excellent Cache Efficiency** - Very high hit rate' :
-  hitRate > 60 ? '⚠️ **Moderate Cache Efficiency** - Cache hit rate could be improved' :
-  '❌ **Poor Cache Efficiency** - Low hit rate indicates caching issues'}
-
-## Recommendations
-${avgTime > 500 ? '- Optimize database queries and implement query caching\n' : ''}
-${hitRate < 60 ? '- Review cache TTL settings and cache key strategies\n' : ''}
-${successRate < 95 ? '- Investigate and resolve error conditions\n' : ''}
-- Monitor performance trends over time
-- Consider implementing cache warming strategies
-- Review geographic performance variations
-
-## Recent Test History
-${recent.slice(-10).map((test, i) => 
-`${i + 1}. ${test.responseTime}ms - ${test.cacheStatus} - ${new Date(test.timestamp).toLocaleTimeString()}`
-).join('\n')}
-
----
-*Report generated by Enhanced Cache Performance Analyzer*
-            `.trim();
-            
-            const blob = new Blob([report], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `cache-performance-report-${new Date().toISOString().split('T')[0]}.md`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-        
-        function clearAllData() {
-            if (confirm('Are you sure you want to clear all test data? This cannot be undone.')) {
-                testHistory = [];
-                endpointResults = {};
-                localStorage.removeItem('cacheAnalyzerData');
-                location.reload();
             }
         }
     </script>
