@@ -414,40 +414,65 @@ async function handleCachePurge(request, url, env) {
   }
 }
 
-// Check if route should get dynamic processing
+// Check if route should get dynamic processing (OPTIMIZED)
 async function checkDynamicRoute(database, pathname) {
   try {
     // Always process if no database
     if (!database) return true;
     
-    // Check if path matches dynamic routes
-    const query = `SELECT 1 FROM dynamic_routes WHERE route_pattern = ? OR ? LIKE route_pattern LIMIT 1`;
-    const result = await database.prepare(query).bind(pathname, pathname).first();
+    const decodedPath = decodeURIComponent(pathname);
+    
+    // OPTIMIZATION 1: Check hardcoded common routes first (0ms)
+    const commonRoutes = [
+      'شركات-تداول-مرخصة-في-السعودية',
+      'منصات-تداول-العملات-الرقمية-في-الإمارات', 
+      'reviews',
+      'brokers',
+      'trading-companies'
+    ];
+    
+    for (const route of commonRoutes) {
+      if (decodedPath.includes(route)) {
+        return true;
+      }
+    }
+    
+    // OPTIMIZATION 2: Exact match check first (fast with index)
+    const exactQuery = `SELECT 1 FROM dynamic_routes WHERE route_pattern = ? AND is_active = 1 LIMIT 1`;
+    let result = await database.prepare(exactQuery).bind(decodedPath).first();
+    if (result) return true;
+    
+    // OPTIMIZATION 3: Pattern matching fallback (slower but comprehensive)
+    const patternQuery = `SELECT 1 FROM dynamic_routes WHERE is_active = 1 AND (? LIKE '%' || route_pattern || '%') LIMIT 1`;
+    result = await database.prepare(patternQuery).bind(decodedPath).first();
     
     return !!result;
   } catch (error) {
     console.error('Error checking dynamic route:', error);
-    // Default to processing if error
-    return true;
+    // Fallback pattern matching for common terms
+    const decodedPath = decodeURIComponent(pathname);
+    return decodedPath.includes('تداول') || 
+           decodedPath.includes('broker') || 
+           decodedPath.includes('review');
   }
 }
 
-// Get brokers for specific country from database
+// Get brokers for specific country from database (OPTIMIZED)
 async function getBrokersForCountry(database, countryCode) {
   try {
-    // Query for country-specific brokers with restriction info
+    // OPTIMIZATION: Simplified query focusing on essential data
     const query = `
-      SELECT b.id, b.name, b.logo, b.rating, b.min_deposit, b.description, 
-             cs.sort_order, uc.restriction_type, uc.reason, uc.alternative_broker_id
+      SELECT 
+        b.id, b.name, b.logo, b.rating, b.min_deposit, b.description,
+        COALESCE(cs.sort_order, b.default_sort_order) as sort_order
       FROM brokers b
-      JOIN country_sorting cs ON b.id = cs.broker_id
-      LEFT JOIN unsupported_countries uc ON b.id = uc.broker_id AND uc.country_code = ? AND uc.is_active = 1
-      WHERE cs.country_code = ? AND b.is_active = 1
-      ORDER BY cs.sort_order ASC
+      LEFT JOIN country_sorting cs ON b.id = cs.broker_id AND cs.country_code = ?
+      WHERE b.is_active = 1
+      ORDER BY COALESCE(cs.sort_order, b.default_sort_order) ASC
       LIMIT 6
     `;
     
-    const result = await database.prepare(query).bind(countryCode, countryCode).all();
+    const result = await database.prepare(query).bind(countryCode).all();
     
     if (result.results && result.results.length > 0) {
       return result.results;
