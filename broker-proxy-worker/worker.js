@@ -154,6 +154,11 @@ export default {
         return handleCacheStatus(env, request, userCountry);
       }
       
+      // Cache debug endpoint
+      if (url.pathname === '/__cache-debug') {
+        return handleCacheDebug(env, request, userCountry);
+      }
+      
       // Skip processing for static assets with enhanced detection
       if (isStaticAsset(url.pathname)) {
         return fetch(request);
@@ -241,7 +246,9 @@ export default {
           'X-Frame-Options': 'SAMEORIGIN',
           'X-Content-Type-Options': 'nosniff',
           'Last-Modified': new Date().toUTCString(),
-          'ETag': `"${generateETag(brokerData, userCountry)}"`
+          'ETag': `"${generateETag(brokerData, userCountry)}"`,
+          'CF-Cache-Tag': `country:${userCountry},page:${url.pathname.replace(/[^a-zA-Z0-9]/g, '-')}`,
+          'Edge-Cache-Tag': `broker-page-${userCountry}`
         }
       });
 
@@ -337,18 +344,6 @@ function createErrorResponse(error, originalRequest) {
     status: 503,
     headers: { 'Content-Type': 'application/json' }
   });
-}
-
-// Generate ETag for cache validation
-function generateETag(brokerData, country) {
-  const content = JSON.stringify({ brokerData, country, timestamp: Math.floor(Date.now() / 1800000) });
-  let hash = 0;
-  for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(36);
 }
 
 // Enhanced cache purge with multiple cache layers
@@ -1011,6 +1006,152 @@ function generateCacheRecommendations(cachedData, metrics) {
   }
   
   return recommendations.length > 0 ? recommendations : ['Cache performance looks good'];
+}
+
+// Cache debug endpoint for troubleshooting
+async function handleCacheDebug(env, request, userCountry) {
+  const url = new URL(request.url);
+  const testPath = url.searchParams.get('path') || '/شركات-تداول-مرخصة-في-السعودية';
+  
+  try {
+    const cacheTests = [];
+    
+    // Test 1: Check KV cache for broker data
+    const brokerCacheKey = `broker-data-${userCountry}-v2`;
+    const cachedBrokerData = await getCachedBrokerData(env.CACHE, brokerCacheKey);
+    cacheTests.push({
+      test: 'Broker Data Cache (KV)',
+      key: brokerCacheKey,
+      result: cachedBrokerData ? 'FOUND' : 'NOT_FOUND',
+      dataAge: cachedBrokerData ? getDataAge(cachedBrokerData) : 'N/A',
+      brokerCount: cachedBrokerData?.brokerData?.length || 0
+    });
+    
+    // Test 2: Check route processing eligibility
+    const shouldProcess = await checkDynamicRoute(env.DB, testPath);
+    cacheTests.push({
+      test: 'Route Processing',
+      path: testPath,
+      result: shouldProcess ? 'ELIGIBLE' : 'NOT_ELIGIBLE'
+    });
+    
+    // Test 3: Check database connectivity
+    let dbTest = { test: 'Database Connectivity', result: 'ERROR' };
+    try {
+      const brokerData = await getBrokersForCountry(env.DB, userCountry);
+      const unsupportedBrokers = await getUnsupportedBrokers(env.DB, userCountry);
+      dbTest = {
+        test: 'Database Connectivity',
+        result: 'SUCCESS',
+        brokerCount: brokerData.length,
+        unsupportedCount: unsupportedBrokers.length
+      };
+    } catch (error) {
+      dbTest.error = error.message;
+    }
+    cacheTests.push(dbTest);
+    
+    // Test 4: Check metrics
+    let metricsTest = { test: 'Metrics Storage', result: 'ERROR' };
+    try {
+      const metrics = await env.CACHE?.get('metrics:daily', { type: 'json' });
+      metricsTest = {
+        test: 'Metrics Storage',
+        result: metrics ? 'FOUND' : 'NOT_FOUND',
+        hits: metrics?.hits || 0,
+        misses: metrics?.misses || 0,
+        hitRate: metrics ? calculateHitRate(metrics) : 'N/A'
+      };
+    } catch (error) {
+      metricsTest.error = error.message;
+    }
+    cacheTests.push(metricsTest);
+    
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      userCountry,
+      testPath,
+      worker: {
+        version: '2.0-enhanced',
+        environment: env.ENVIRONMENT || 'unknown'
+      },
+      cacheTests,
+      request: {
+        url: request.url,
+        country: request.cf?.country,
+        colo: request.cf?.colo,
+        userAgent: request.headers.get('User-Agent')
+      },
+      recommendations: generateCacheDebugRecommendations(cacheTests)
+    };
+
+    return new Response(JSON.stringify(debugInfo, null, 2), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    });
+
+  } catch (error) {
+    return new Response(JSON.stringify({
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+function generateCacheDebugRecommendations(cacheTests) {
+  const recommendations = [];
+  
+  const brokerCache = cacheTests.find(t => t.test === 'Broker Data Cache (KV)');
+  const routeProcessing = cacheTests.find(t => t.test === 'Route Processing');
+  const dbConnectivity = cacheTests.find(t => t.test === 'Database Connectivity');
+  const metrics = cacheTests.find(t => t.test === 'Metrics Storage');
+  
+  if (brokerCache?.result === 'NOT_FOUND') {
+    recommendations.push('Broker cache empty - first request or cache expired');
+  }
+  
+  if (routeProcessing?.result === 'NOT_ELIGIBLE') {
+    recommendations.push('Route not eligible for processing - check dynamic_routes table');
+  }
+  
+  if (dbConnectivity?.result === 'ERROR') {
+    recommendations.push('Database connection failed - check D1 binding and database status');
+  } else if (dbConnectivity?.brokerCount === 0) {
+    recommendations.push('No broker data in database - check brokers table');
+  }
+  
+  if (metrics?.result === 'NOT_FOUND') {
+    recommendations.push('No metrics data - monitoring system may be initializing');
+  }
+  
+  if (recommendations.length === 0) {
+    recommendations.push('All systems operational - cache and database working correctly');
+  }
+  
+  return recommendations;
+}
+
+// Generate ETag for cache validation
+function generateETag(brokerData, country) {
+  const content = JSON.stringify({ 
+    brokerData: brokerData.map(b => ({ id: b.id, name: b.name })), 
+    country, 
+    timestamp: Math.floor(Date.now() / 3600000) // Hour-based ETag
+  });
+  
+  let hash = 0;
+  for (let i = 0; i < content.length; i++) {
+    const char = content.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash).toString(36);
 }
 
 // Cron handler for scheduled cache warming
