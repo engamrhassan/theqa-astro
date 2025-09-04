@@ -470,31 +470,76 @@ Data Age: ${data.cache.status?.dataAge || 'N/A'}
             badge.className = `status-badge status-${health.status === 'healthy' ? 'healthy' : 
                                                     health.status === 'degraded' ? 'warning' : 'error'}`;
             
-            // Update content
-            let html = `
-                <div class="metric-item">
-                    <span class="metric-label">Response Time:</span>
-                    <span class="metric-value">${health.responseTime}ms</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Database:</span>
-                    <span class="metric-value status-${health.checks.database.status}">${health.checks.database.status}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Cache:</span>
-                    <span class="metric-value status-${health.checks.cache.status}">${health.checks.cache.status}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="metric-label">Broker Data:</span>
-                    <span class="metric-value">${health.checks.brokerData.count} brokers</span>
-                </div>
-            `;
+            // Update content - handle both old and new health response formats
+            let html = '';
             
-            if (health.metrics) {
+            if (health.responseTime !== undefined) {
                 html += `
                     <div class="metric-item">
-                        <span class="metric-label">Hit Rate:</span>
-                        <span class="metric-value">${health.metrics.cacheHitRate}</span>
+                        <span class="metric-label">Response Time:</span>
+                        <span class="metric-value">${health.responseTime}ms</span>
+                    </div>
+                `;
+            }
+            
+            // Handle new simplified health format
+            if (health.hitRate) {
+                html += `
+                    <div class="metric-item">
+                        <span class="metric-label">Cache Hit Rate:</span>
+                        <span class="metric-value">${health.hitRate}</span>
+                    </div>
+                `;
+            }
+            
+            if (health.totalRequests !== undefined) {
+                html += `
+                    <div class="metric-item">
+                        <span class="metric-label">Total Requests:</span>
+                        <span class="metric-value">${health.totalRequests}</span>
+                    </div>
+                `;
+            }
+            
+            // Handle old detailed health format
+            if (health.checks) {
+                html += `
+                    <div class="metric-item">
+                        <span class="metric-label">Database:</span>
+                        <span class="metric-value status-${health.checks.database.status}">${health.checks.database.status}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Cache:</span>
+                        <span class="metric-value status-${health.checks.cache.status}">${health.checks.cache.status}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Broker Data:</span>
+                        <span class="metric-value">${health.checks.brokerData.count} brokers</span>
+                    </div>
+                `;
+            }
+            
+            // Top countries
+            if (health.topCountries && health.topCountries.length > 0) {
+                html += '<br><strong>Top Countries:</strong><br>';
+                health.topCountries.slice(0, 3).forEach(([country, count]) => {
+                    html += `
+                        <div class="metric-item">
+                            <span class="metric-label">${country}:</span>
+                            <span class="metric-value">${count} requests</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Recommendations
+            if (health.recommendations && health.recommendations.length > 0) {
+                html += `
+                    <div class="recommendations">
+                        <h4>💡 Recommendations:</h4>
+                        <ul>
+                            ${health.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
                     </div>
                 `;
             }
