@@ -66,8 +66,8 @@ try {
   const extractedTitle = data.data?.name || '';
   let extractedContent = data.data?.content || '';
   
-  // Replace [beginner-57] placeholder with a marker for component insertion
-  extractedContent = extractedContent.replace(/\[beginner-57\]/g, '<!-- BROKER_TABLE_PLACEHOLDER -->');
+  // Replace [beginner-57] placeholder with a marker for worker injection
+  extractedContent = extractedContent.replace(/\[beginner-57\]/g, '<!-- BEGINNER_BROKERS_PLACEHOLDER -->');
   
   pageData = {
     title: extractedTitle,
@@ -85,7 +85,7 @@ try {
   
   if (cachedData) {
     let processedContent = cachedData.content;
-    processedContent = processedContent.replace(/\[beginner-57\]/g, '<!-- BROKER_TABLE_PLACEHOLDER -->');
+    processedContent = processedContent.replace(/\[beginner-57\]/g, '<!-- BEGINNER_BROKERS_PLACEHOLDER -->');
     
     pageData = {
       title: cachedData.title,
@@ -95,8 +95,8 @@ try {
       updated_at: cachedData.updated_at
     };
   } else {
-    error = err instanceof Error ? err.message : 'حدث خطأ في تحميل البيانات';
-    pageData = null;
+  error = err instanceof Error ? err.message : 'حدث خطأ في تحميل البيانات';
+  pageData = null;
   }
 }
 ---
@@ -146,12 +146,9 @@ try {
         <main class="content-main">
           <article class="content-article">
             <div class="content-body">
-              {pageData.content.split('<!-- BROKER_TABLE_PLACEHOLDER -->').map((part, index, array) => (
-                <>
-                  <div set:html={part}></div>
-                  {index < array.length - 1 && <BrokerTable />}
-                </>
-              ))}
+              <!-- Content will be processed by Cloudflare Worker -->
+              <!-- Worker replaces [beginner-57] -> BEGINNER_BROKERS_PLACEHOLDER -> dynamic table -->
+              <div set:html={pageData.content}></div>
             </div>
           </article>
           

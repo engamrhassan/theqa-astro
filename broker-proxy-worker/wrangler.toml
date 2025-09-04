@@ -1,6 +1,6 @@
 name = "broker-proxy-worker"
 main = "worker.js"
-compatibility_date = "2025-08-22"
+compatibility_date = "2025-09-04"
 
 [vars]
 PURGE_TOKEN = "dfdf76dfdfyuh343kfd63hje3"
