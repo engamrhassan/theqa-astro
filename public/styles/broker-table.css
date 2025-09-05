@@ -193,3 +193,201 @@
     font-size: 13px;
   }
 }
+
+/* PopularBrokerTable Styles */
+.popular-broker-table-wrapper {
+  width: 100%;
+  max-width: 800px;
+  margin: 2rem auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.popular-broker-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.popular-table-header {
+  background: #e5e7eb;
+}
+
+.popular-header-cell {
+  padding: 16px 20px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+  text-align: center;
+  border: none;
+}
+
+.popular-company-header {
+  text-align: right;
+  width: 40%;
+}
+
+.popular-investors-header,
+.popular-founding-header {
+  width: 30%;
+}
+
+.popular-broker-row:hover {
+  background: #f8fafc;
+}
+
+.popular-broker-cell {
+  padding: 20px;
+  border-bottom: 1px solid #f3f4f6;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.popular-company-cell {
+  text-align: right;
+}
+
+.popular-company-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.popular-company-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #2563eb;
+}
+
+.popular-company-logo {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  max-width: 48px;
+  max-height: 48px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 10px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.popular-logo-text {
+  line-height: 1;
+}
+
+.popular-investors-count {
+  font-weight: 700;
+  font-size: 18px;
+  color: #059669;
+}
+
+.popular-founding-year {
+  font-weight: 600;
+  font-size: 16px;
+  color: #7c3aed;
+}
+
+.popular-table-footer {
+  background: #e5e7eb;
+  padding: 16px 20px;
+}
+
+.popular-footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.popular-footer-icon {
+  font-size: 16px;
+}
+
+.popular-footer-text {
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .popular-broker-table-wrapper {
+    margin: 1rem;
+    border-radius: 12px;
+  }
+
+  .popular-header-cell,
+  .popular-broker-cell {
+    padding: 12px 16px;
+  }
+
+  .popular-company-info {
+    gap: 12px;
+  }
+
+  .popular-company-name {
+    font-size: 14px;
+  }
+
+  .popular-company-logo {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+    font-size: 9px;
+  }
+
+  .popular-investors-count {
+    font-size: 16px;
+  }
+
+  .popular-founding-year {
+    font-size: 14px;
+  }
+
+  .popular-header-cell,
+  .popular-footer-text {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .popular-header-cell,
+  .popular-broker-cell {
+    padding: 10px 12px;
+  }
+
+  .popular-company-info {
+    gap: 8px;
+  }
+
+  .popular-company-name {
+    font-size: 13px;
+  }
+
+  .popular-company-logo {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+    max-width: 36px;
+    max-height: 36px;
+    font-size: 8px;
+  }
+
+  .popular-investors-count {
+    font-size: 15px;
+  }
+
+  .popular-founding-year {
+    font-size: 13px;
+  }
+}
