@@ -2,6 +2,8 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BrokerList from '../components/BrokerList.astro';
 import BrokerTable from '../components/BrokerTable.astro';
+import BeginnerBrokerTable from '../components/BeginnerBrokerTable.astro';
+import PopularBrokerTable from '../components/PopularBrokerTable.astro';
 import pageCache from '../data/page-cache.json';
 
 export async function getStaticPaths() {
@@ -145,6 +147,12 @@ try {
           title="أفضل شركات التداول في منطقتك"
           subtitle="شركات مرخصة وموثوقة مرتبة حسب موقعك الجغرافي"
         />
+
+        <!-- Hidden components to load CSS styles for worker-generated content -->
+        <div style="display: none;">
+          <BeginnerBrokerTable showPlaceholder={false} />
+          <PopularBrokerTable showPlaceholder={false} />
+        </div>
 
         <!-- Dynamic Content Section -->
         <main class="content-main">

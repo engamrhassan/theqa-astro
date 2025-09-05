@@ -749,19 +749,22 @@ function generatePopularBrokerHtml(brokers, countryCode) {
   }
 
   let html = '<div class="popular-broker-table-wrapper">';
-  html += '<div class="popular-broker-table">';
+  html += '<table class="popular-broker-table">';
 
   // Header
   html += `
-    <div class="popular-table-header">
-      <div class="popular-header-cell popular-company-header">الشركة</div>
-      <div class="popular-header-cell popular-investors-header">عدد المستثمرين</div>
-      <div class="popular-header-cell popular-founding-header">سنة التأسيس</div>
-    </div>
+    <thead>
+      <tr class="popular-table-header">
+        <th class="popular-header-cell popular-company-header">الشركة</th>
+        <th class="popular-header-cell popular-investors-header">عدد المستثمرين</th>
+        <th class="popular-header-cell popular-founding-header">سنة التأسيس</th>
+      </tr>
+    </thead>
   `;
 
   // Broker rows - limit to top 4 for popular table
   const topBrokers = brokers.slice(0, 4);
+  html += '<tbody>';
 
   topBrokers.forEach((broker, index) => {
     const investorCount = broker.investor_count || '1.5M+';
@@ -769,36 +772,42 @@ function generatePopularBrokerHtml(brokers, countryCode) {
     const logoColor = getBrokerLogoColor(broker.name);
 
     html += `
-      <div class="popular-broker-row" data-position="${index + 1}" data-broker-id="${broker.id}">
-        <div class="popular-broker-cell popular-company-cell">
+      <tr class="popular-broker-row" data-position="${index + 1}" data-broker-id="${broker.id}">
+        <td class="popular-broker-cell popular-company-cell">
           <div class="popular-company-info">
             <div class="popular-company-logo" style="background: ${logoColor}; ${logoColor === '#fbbf24' ? 'color: #1f2937' : ''}">
               <span class="popular-logo-text">${broker.name}</span>
             </div>
             <span class="popular-company-name">${broker.name}</span>
           </div>
-        </div>
-        <div class="popular-broker-cell popular-investors-cell">
+        </td>
+        <td class="popular-broker-cell popular-investors-cell">
           <span class="popular-investors-count">${investorCount}</span>
-        </div>
-        <div class="popular-broker-cell popular-founding-cell">
+        </td>
+        <td class="popular-broker-cell popular-founding-cell">
           <span class="popular-founding-year">${foundingYear}</span>
-        </div>
-      </div>
+        </td>
+      </tr>
     `;
   });
 
+  html += '</tbody>';
+
   // Footer
   html += `
-    <div class="popular-table-footer">
-      <div class="popular-footer-content">
-        <span class="popular-footer-icon">🔥</span>
-        <span class="popular-footer-text">أشهر شركات التداول</span>
-      </div>
-    </div>
+    <tfoot>
+      <tr>
+        <td colspan="3" class="popular-table-footer">
+          <div class="popular-footer-content">
+            <span class="popular-footer-icon">🔥</span>
+            <span class="popular-footer-text">أشهر شركات التداول</span>
+          </div>
+        </td>
+      </tr>
+    </tfoot>
   `;
 
-  html += '</div></div>';
+  html += '</table></div>';
   return html;
 }
 
