@@ -523,3 +523,19 @@ const {
     }
   }
 </style>
+
+<script>
+  // Show fallback popular table if dynamic content doesn't load
+  setTimeout(() => {
+    const fallbackTable = document.querySelector('.fallback-popular-table');
+    
+    if (fallbackTable) {
+      // Check if dynamic content was loaded
+      const dynamicContent = document.querySelector('.popular-table-grid');
+      
+      if (!dynamicContent) {
+        (fallbackTable as HTMLElement).style.display = 'block';
+      }
+    }
+  }, 3000); // Show fallback after 3 seconds
+</script>
