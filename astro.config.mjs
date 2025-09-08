@@ -1,7 +1,10 @@
 import { defineConfig } from 'astro/config';
 
+import cloudflare from '@astrojs/cloudflare';
+
 export default defineConfig({
   site: 'https://astro.theqalink.com',
+
   i18n: {
     defaultLocale: 'ar',
     locales: ['ar'],
@@ -9,10 +12,14 @@ export default defineConfig({
       prefixDefaultLocale: false
     }
   },
-  output: 'static', // Back to static for better performance
+
+  // Back to static for better performance
+  output: 'static',
+
   build: {
     inlineStylesheets: 'auto'
   },
+
   vite: {
     build: {
       cssMinify: true,
@@ -24,5 +31,7 @@ export default defineConfig({
         }
       }
     }
-  }
+  },
+
+  adapter: cloudflare()
 });
