@@ -65,8 +65,8 @@ try {
   const data = await response.json();
   
   // Extract content from API response
-  const extractedTitle = data.data?.name || '';
-  let extractedContent = data.data?.content || '';
+  const extractedTitle = data.page?.name || '';
+  let extractedContent = data.page?.content || '';
   
   // Replace [beginner-57] placeholder with a marker for worker injection
   extractedContent = extractedContent.replace(/\[beginner-57\]/g, '<!-- BEGINNER_BROKERS_PLACEHOLDER -->');
