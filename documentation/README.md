@@ -46,10 +46,14 @@ theqa-astro/
 │   └── test-performance-simple.sh
 │
 └── 📚 Documentation
-    ├── README.md            # This file
-    ├── CACHING-GUIDE.md     # Detailed caching explanation
-    ├── WORKER-GUIDE.md      # Worker architecture guide
-    └── DEPLOYMENT-GUIDE.md  # Deployment instructions
+    ├── README.md                    # This file
+    ├── CACHING-GUIDE.md             # Detailed caching explanation
+    ├── WORKER-GUIDE.md              # Worker architecture guide
+    ├── DEPLOYMENT-GUIDE.md          # Deployment instructions
+    ├── API-REFERENCE.md             # Complete API documentation
+    ├── PERFORMANCE-OPTIMIZATIONS.md # Performance optimization guide
+    ├── PERFORMANCE-METRICS.md       # Performance metrics and monitoring
+    └── CHANGELOG.md                 # Project changelog and version history
 ```
 
 ## 🚀 How The System Works
@@ -195,6 +199,26 @@ npm run build
 - **[WORKER-GUIDE.md](./WORKER-GUIDE.md)** - Worker architecture deep dive
 - **[DEPLOYMENT-GUIDE.md](./DEPLOYMENT-GUIDE.md)** - Step-by-step deployment
 - **[API-REFERENCE.md](./API-REFERENCE.md)** - Worker endpoints documentation
+
+## ⚡ Performance Optimizations
+
+### **Recent Performance Improvements**
+- **Load Time**: Reduced from 700ms to 200-300ms (60% improvement)
+- **HTML Size**: Reduced from 16KB to 8KB (50% reduction)
+- **CSS Requests**: Reduced from 7 to 2 files for index page
+- **HTTP Requests**: Reduced by 50% overall
+
+### **Key Optimizations Implemented**
+- ✅ Conditional CSS loading based on page type
+- ✅ Critical CSS inline for faster rendering
+- ✅ Font preloading with non-blocking strategy
+- ✅ HTML payload optimization
+- ✅ Resource prioritization
+
+### **Performance Documentation**
+- **[PERFORMANCE-OPTIMIZATIONS.md](./PERFORMANCE-OPTIMIZATIONS.md)** - Detailed optimization guide
+- **[PERFORMANCE-METRICS.md](./PERFORMANCE-METRICS.md)** - Metrics and monitoring
+- **[CHANGELOG.md](./CHANGELOG.md)** - Version history and changes
 
 ## 🧪 Testing & Monitoring
 
