@@ -84,6 +84,14 @@ const currentPage = 1;
     <section class="page-header">
       <h1>جميع المقالات</h1>
       <p>اكتشف مجموعة واسعة من المقالات والموضوعات المتنوعة</p>
+      <div class="header-actions">
+        <a href="/search" class="search-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          البحث في المقالات
+        </a>
+      </div>
       <div class="articles-count">
         عرض {articlesData?.from || 0} - {articlesData?.to || 0} من أصل {articlesData?.total || 0} مقال
       </div>
@@ -228,8 +236,37 @@ const currentPage = 1;
   
   .page-header p {
     font-size: 1.125rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
     opacity: 0.9;
+  }
+  
+  .header-actions {
+    margin-bottom: 1.5rem;
+  }
+  
+  .search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+  }
+  
+  .search-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+  
+  .search-btn:active {
+    transform: translateY(0);
   }
   
   .articles-count {
@@ -479,6 +516,11 @@ const currentPage = 1;
     
     .page-header p {
       font-size: 1rem;
+    }
+    
+    .search-btn {
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
     }
     
     .articles-grid {
