@@ -1,7 +1,8 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
 
-export const prerender = false;
+export const prerender = true;
+
 
 // Types
 interface Article {
@@ -71,8 +72,17 @@ async function fetchArticles(page = 1): Promise<ArticlesResponse> {
     };
   }
 }
+export async function getStaticPaths() {
+    const lastPage = 14;
 
-const page = Astro.url.searchParams.get('page');
+const paths: any[] = [];
+
+for (let i = 1; i <= lastPage; i++) {
+  paths.push({ params: { page: i.toString() } });
+}
+  return paths;
+}
+const { page } = Astro.params;
 console.log("Page:", page);
 const articlesData = await fetchArticles(page ? parseInt(page) : 1);
 const currentPage = 1;
@@ -137,7 +147,7 @@ const currentPage = 1;
         <nav class="pagination" aria-label="تنقل بين الصفحات">
           <!-- Previous Page -->
           {articlesData?.prev_page_url ? (
-            <a href={`/articles?page=${currentPage - 1}`} class="pagination-btn prev-btn">
+            <a href={`/articles/page/${currentPage - 1}`} class="pagination-btn prev-btn">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
@@ -174,7 +184,7 @@ const currentPage = 1;
                 );
               } else {
                 return (
-                  <a href={`/articles?page=${page}`} class="pagination-number">
+                  <a href={`/articles/page/${page}`} class="pagination-number">
                     {pageNumber}
                   </a>
                 );
@@ -184,7 +194,7 @@ const currentPage = 1;
 
           <!-- Next Page -->
           {articlesData?.next_page_url ? (
-            <a href={`/articles?page=${currentPage + 1}`} class="pagination-btn next-btn">
+            <a href={`/articles/page/${currentPage + 1}`} class="pagination-btn next-btn">
               التالي
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
