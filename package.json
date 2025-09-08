@@ -14,7 +14,7 @@
     "cache:clear": "node clear-cache.js"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^12.6.7",
+    "@astrojs/cloudflare": "^12.6.8",
     "astro": "^5.13.2"
   }
 }
