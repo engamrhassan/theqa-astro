@@ -1,0 +1,203 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="نتائج البحث عن {query}" description="نتائج البحث عن {query}">
+  <form action="/search" method="get" class="search-form">
+    <div class="search-input-group">
+      <div class="search-icon">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </div>
+      <input
+        type="search"
+        name="q"
+        placeholder="ابحث عن مقالة، موضوع، أو كلمة مفتاحية..."
+        class="search-input"
+        autocomplete="off"
+        required
+      />
+      <button type="submit" class="search-button">
+        <span class="search-button-text">ابحث</span>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M5 12H19M12 5L19 12L12 19"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </div>
+  </form>
+  <div class="mb-4 page-title">
+    <h1 class="font-weight-bold text-dark">نتائج البحث عن</h1>
+  </div>
+  <div class="gcse-searchresults-only"></div>
+
+  <script async src="https://cse.google.com/cse.js?cx=f1404bf89257f49a8"
+  ></script>
+</BaseLayout>
+
+<style>
+  /* Search Form Styles */
+  .search-form {
+    max-width: 800px;
+    margin: 0 auto 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .search-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .search-form.focused .search-input-group {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .search-icon {
+    display: flex;
+    align-items: center;
+    color: #64748b;
+    margin-left: 0.75rem;
+  }
+
+  .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 1.125rem;
+    color: #1e293b;
+    background: transparent;
+    padding: 0.5rem 0;
+  }
+
+  .search-input::placeholder {
+    color: #94a3b8;
+  }
+
+  .search-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-right: 0.5rem;
+  }
+
+  .search-button:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+  }
+
+  .search-button:active {
+    transform: translateY(0);
+  }
+
+  /* Search Suggestions */
+  .search-suggestions {
+    margin-top: 1.5rem;
+    text-align: center;
+  }
+
+  .suggestions-label {
+    display: block;
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+  }
+
+  .suggestion-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .suggestion-tag {
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .suggestion-tag:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    transform: translateY(-1px);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .search-input-group {
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .search-button {
+      width: 100%;
+      justify-content: center;
+      margin-right: 0;
+    }
+
+    .suggestion-tags {
+      justify-content: flex-start;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .search-input {
+      font-size: 1rem;
+    }
+
+    .search-button {
+      padding: 0.75rem 1rem;
+    }
+
+    .suggestion-tag {
+      font-size: 0.75rem;
+      padding: 0.375rem 0.75rem;
+    }
+  }
+</style>
