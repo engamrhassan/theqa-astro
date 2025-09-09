@@ -55,7 +55,7 @@ const currentYear = new Date().getFullYear();
     {Astro.url.pathname.includes('شركات-تداول') && (
       <link rel="stylesheet" href="/styles/broker-table.css" />
     )}
-    {Astro.url.pathname.includes('منصات-تداول') && (
+    {(Astro.url.pathname.includes('منصات-تداول') || Astro.url.pathname.includes('شركات-تداول') || Astro.url.pathname !== '/') && (
       <link rel="stylesheet" href="/styles/slug-page.css" />
     )}
     
