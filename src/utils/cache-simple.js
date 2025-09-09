@@ -6,14 +6,17 @@
 // Simple cache strategies without file system operations
 export const getCacheBuster = (type = 'page') => {
   // For development, use timestamp
-  if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
+  if (
+    typeof process !== 'undefined' &&
+    process.env.NODE_ENV === 'development'
+  ) {
     return `?t=${Date.now()}`;
   }
-  
+
   // For production, use simple date-based versioning
   const date = new Date();
   const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
-  
+
   switch (type) {
     case 'page':
       // Changes daily
@@ -36,5 +39,5 @@ export const getCacheBuster = (type = 'page') => {
 export const getCacheInfo = () => ({
   version: `simple-${new Date().toISOString().split('T')[0]}`,
   type: 'simple',
-  buildTime: new Date().toISOString()
+  buildTime: new Date().toISOString(),
 });
