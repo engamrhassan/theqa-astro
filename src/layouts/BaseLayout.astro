@@ -51,6 +51,9 @@ const currentYear = new Date().getFullYear();
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://astro.theqalink.com" />
     
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="/src/styles/main.css" />
+    
     <!-- Component Styles - Only load when needed -->
     {Astro.url.pathname.includes('شركات-تداول') && (
       <link rel="stylesheet" href="/styles/broker-table.css" />

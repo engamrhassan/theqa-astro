@@ -1,0 +1,115 @@
+---
+export interface Props {
+  error?: Error;
+  fallback?: string;
+}
+
+const { error, fallback = 'حدث خطأ غير متوقع' } = Astro.props;
+---
+
+<div class="error-boundary">
+  <div class="error-boundary__content">
+    <div class="error-boundary__icon">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="currentColor"/>
+      </svg>
+    </div>
+    
+    <h2 class="error-boundary__title">عذراً، حدث خطأ</h2>
+    <p class="error-boundary__message">{fallback}</p>
+    
+    {error && (
+      <details class="error-boundary__details">
+        <summary class="error-boundary__summary">تفاصيل الخطأ</summary>
+        <pre class="error-boundary__stack">{error.stack}</pre>
+      </details>
+    )}
+    
+    <div class="error-boundary__actions">
+      <a href="/" class="btn btn--primary">العودة للصفحة الرئيسية</a>
+      <button onclick="window.location.reload()" class="btn btn--outline">إعادة المحاولة</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .error-boundary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    padding: var(--spacing-8);
+    background: var(--bg-secondary);
+  }
+  
+  .error-boundary__content {
+    text-align: center;
+    max-width: 500px;
+    background: var(--bg-primary);
+    padding: var(--spacing-8);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .error-boundary__icon {
+    color: var(--color-error);
+    margin-bottom: var(--spacing-4);
+  }
+  
+  .error-boundary__title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-2);
+  }
+  
+  .error-boundary__message {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-6);
+  }
+  
+  .error-boundary__details {
+    margin-bottom: var(--spacing-6);
+    text-align: left;
+  }
+  
+  .error-boundary__summary {
+    cursor: pointer;
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-2);
+  }
+  
+  .error-boundary__stack {
+    background: var(--bg-tertiary);
+    padding: var(--spacing-4);
+    border-radius: var(--radius-base);
+    font-family: monospace;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    overflow-x: auto;
+    white-space: pre-wrap;
+  }
+  
+  .error-boundary__actions {
+    display: flex;
+    gap: var(--spacing-3);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  @media (max-width: 768px) {
+    .error-boundary {
+      padding: var(--spacing-4);
+    }
+    
+    .error-boundary__content {
+      padding: var(--spacing-6);
+    }
+    
+    .error-boundary__actions {
+      flex-direction: column;
+    }
+  }
+</style>

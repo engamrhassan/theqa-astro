@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { BrokerSchema, CountrySortingSchema } from '../schemas/broker';
 import {
   safeValidate,
@@ -60,8 +60,8 @@ describe('Validation Utilities', () => {
   it('should validate country codes', () => {
     expect(validateCountryCode('EG')).toBe('EG');
     expect(validateCountryCode('eg')).toBe('EG');
-    expect(() => validateCountryCode('INVALID')).toThrow();
-    expect(() => validateCountryCode('E')).toThrow();
+    expect(() => validateCountryCode('INVALID')).toThrow('Invalid country code format');
+    expect(() => validateCountryCode('E')).toThrow('Invalid country code format');
   });
 
   it('should sanitize strings', () => {

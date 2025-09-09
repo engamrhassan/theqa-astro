@@ -66,6 +66,7 @@ export function validateApiRequest<T>(
   try {
     return validate(schema, data);
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(`Validation failed for ${context}:`, error);
     throw new Error(`Invalid ${context} data: ${error.message}`);
   }

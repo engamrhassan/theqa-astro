@@ -1,0 +1,102 @@
+---
+export interface Props {
+  size?: 'sm' | 'md' | 'lg';
+  text?: string;
+  fullscreen?: boolean;
+}
+
+const { 
+  size = 'md', 
+  text = 'جاري التحميل...', 
+  fullscreen = false 
+} = Astro.props;
+
+const sizeClasses = {
+  sm: 'loading-spinner--sm',
+  md: 'loading-spinner--md',
+  lg: 'loading-spinner--lg'
+};
+---
+
+<div class={`loading-spinner ${sizeClasses[size]} ${fullscreen ? 'loading-spinner--fullscreen' : ''}`}>
+  <div class="loading-spinner__container">
+    <div class="loading-spinner__spinner"></div>
+    {text && <p class="loading-spinner__text">{text}</p>}
+  </div>
+</div>
+
+<style>
+  .loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-4);
+  }
+  
+  .loading-spinner--fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(4px);
+    z-index: var(--z-modal);
+  }
+  
+  .loading-spinner__container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-3);
+  }
+  
+  .loading-spinner__spinner {
+    border: 3px solid var(--color-gray-200);
+    border-top: 3px solid var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  .loading-spinner--sm .loading-spinner__spinner {
+    width: 20px;
+    height: 20px;
+    border-width: 2px;
+  }
+  
+  .loading-spinner--md .loading-spinner__spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+  }
+  
+  .loading-spinner--lg .loading-spinner__spinner {
+    width: 48px;
+    height: 48px;
+    border-width: 4px;
+  }
+  
+  .loading-spinner__text {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin: 0;
+    text-align: center;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    .loading-spinner--fullscreen {
+      background: rgba(0, 0, 0, 0.8);
+    }
+    
+    .loading-spinner__spinner {
+      border-color: var(--color-gray-700);
+      border-top-color: var(--color-primary-light);
+    }
+  }
+</style>
