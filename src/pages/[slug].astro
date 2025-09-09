@@ -148,12 +148,6 @@ try {
           subtitle="شركات مرخصة وموثوقة مرتبة حسب موقعك الجغرافي"
         />
 
-        <!-- Hidden components to load CSS styles for worker-generated content -->
-        <div style="display: none;">
-          <BeginnerBrokerTable showPlaceholder={false} />
-          <PopularBrokerTable showPlaceholder={false} />
-        </div>
-
         <!-- Dynamic Content Section -->
         <main class="content-main">
           <article class="content-article">
@@ -162,6 +156,10 @@ try {
               <!-- Worker replaces [beginner-57] -> BEGINNER_BROKERS_PLACEHOLDER -> dynamic table -->
               <!-- Worker replaces [popular-58] -> POPULAR_BROKERS_PLACEHOLDER -> dynamic table -->
               <div set:html={pageData.content}></div>
+              
+              <!-- Fallback tables (shown if Worker doesn't process placeholders) -->
+              <BeginnerBrokerTable showPlaceholder={true} />
+              <PopularBrokerTable showPlaceholder={true} />
             </div>
           </article>
           
