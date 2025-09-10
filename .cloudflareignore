@@ -1,0 +1,21 @@
+# Cloudflare Pages ignore file
+# Exclude worker directory from Pages build
+broker-proxy-worker/
+
+# Exclude development files
+.wrangler/
+node_modules/
+.git/
+*.log
+
+# Exclude documentation
+documentation/
+
+# Exclude test files
+src/test/
+*.test.ts
+*.test.js
+
+# Exclude build artifacts
+dist/
+.cache/
