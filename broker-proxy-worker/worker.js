@@ -10,6 +10,115 @@ if (typeof globalThis.AbortController === 'undefined') {
   };
 }
 
+// Import Handlebars
+const Handlebars = require('handlebars');
+
+// Handlebars Templates
+const BROKER_CARD_TEMPLATE = Handlebars.compile(`
+<article class="company-card" data-position="{{position}}" data-broker-id="{{brokerId}}">
+  <div class="company-logo">
+    <div class="company-logo-container" style="background: {{logoColor}}">
+      <span class="broker-name">{{name}}</span>
+    </div>
+  </div>
+  <div class="company-info">
+    <div class="company-rating">
+      <div class="company-stars">{{{starsHtml}}}</div>
+    </div>
+    <div class="company-license">
+      <div class="company-license-label">التراخيص</div>
+      <div class="company-license-value">{{license}}</div>
+    </div>
+    <div class="company-details">
+      <div class="company-min-deposit">أقل مبلغ للإيداع</div>
+      <div class="company-deposit-amount">{{minDeposit}}</div>
+    </div>
+  </div>
+  <button class="company-open-account-btn">فتح حساب</button>
+</article>
+`);
+
+const BEGINNER_BROKER_TEMPLATE = Handlebars.compile(`
+<div class="broker-table-container">
+  <h3 class="table-title">أفضل شركات التداول للمبتدئين</h3>
+  <div class="broker-table">
+    <div class="table-header">
+      <div class="header-cell">الشركة</div>
+      <div class="header-cell">أقل مبلغ للإيداع</div>
+      <div class="header-cell">التقييم</div>
+      <div class="header-cell">الإجراء</div>
+    </div>
+    {{#each brokers}}
+    <div class="table-row">
+      <div class="table-cell broker-name-cell">
+        <div class="broker-logo-small" style="background: {{logoColor}}">{{name}}</div>
+        <span class="broker-name-text">{{name}}</span>
+      </div>
+      <div class="table-cell">{{minDeposit}}</div>
+      <div class="table-cell">
+        <div class="rating-stars">{{{starsHtml}}}</div>
+      </div>
+      <div class="table-cell">
+        <button class="action-btn">فتح حساب</button>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+</div>
+`);
+
+const POPULAR_BROKER_TEMPLATE = Handlebars.compile(`
+<div class="broker-table-container">
+  <h3 class="table-title">أشهر شركات التداول</h3>
+  <div class="broker-table">
+    <div class="table-header">
+      <div class="header-cell">الشركة</div>
+      <div class="header-cell">عدد المستثمرين</div>
+      <div class="header-cell">سنة التأسيس</div>
+      <div class="header-cell">الإجراء</div>
+    </div>
+    {{#each brokers}}
+    <div class="table-row">
+      <div class="table-cell broker-name-cell">
+        <div class="broker-logo-small" style="background: {{logoColor}}">{{name}}</div>
+        <span class="broker-name-text">{{name}}</span>
+      </div>
+      <div class="table-cell">{{investorCount}}</div>
+      <div class="table-cell">{{foundingYear}}</div>
+      <div class="table-cell">
+        <button class="action-btn">فتح حساب</button>
+      </div>
+    </div>
+    {{/each}}
+  </div>
+</div>
+`);
+
+// Helper functions for templates
+function generateStarsHtml(rating = 4) {
+  const stars = Math.min(Math.max(Math.round(rating), 1), 5);
+  return Array(stars)
+    .fill()
+    .map(() => `
+      <svg class="company-star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    `)
+    .join('');
+}
+
+function getBrokerLogoColor(brokerName) {
+  const colors = {
+    'Exness': '#fbbf24',
+    'eVest': '#1e40af', 
+    'Evest': '#1e40af',
+    'XTB': '#dc2626',
+    'AvaTrade': '#4f46e5',
+    'default': '#6b7280'
+  };
+  return colors[brokerName] || colors.default;
+}
+
 // Cache monitoring and analytics system
 class CacheMonitor {
   constructor(env) {
@@ -777,7 +886,7 @@ function injectBrokerData(html, brokers, countryCode, unsupportedBrokers = []) {
   }
 }
 
-// Generate broker HTML
+// Generate broker HTML using Handlebars
 function generateBrokerHtml(brokers, _countryCode) {
   if (!brokers || brokers.length === 0) {
     return `
@@ -787,58 +896,22 @@ function generateBrokerHtml(brokers, _countryCode) {
     `;
   }
 
-  let html = '<div class="companies-grid">';
+  const brokerCards = brokers.map((broker, index) => 
+    BROKER_CARD_TEMPLATE({
+      name: broker.name,
+      logoColor: getBrokerLogoColor(broker.name),
+      starsHtml: generateStarsHtml(broker.rating),
+      license: 'FCA', // Default license
+      minDeposit: broker.min_deposit || 0,
+      position: index + 1,
+      brokerId: broker.id
+    })
+  ).join('');
 
-  brokers.forEach((broker, index) => {
-    const minDeposit = broker.min_deposit || 0;
-    // const _rating = broker.rating || 0;
-    // const _description = broker.description || 'وسيط موثوق للتداول';
-    const logoColor = getBrokerLogoColor(broker.name);
-
-    // Generate star icons
-    const starsHtml = Array(4)
-      .fill()
-      .map(
-        () => `
-      <svg class="company-star" width="16" height="16" viewBox="0 0 24 24" fill="#2563eb">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-      </svg>
-    `
-      )
-      .join('');
-
-    html += `
-      <article class="company-card" data-position="${index + 1}" data-broker-id="${broker.id}">
-        <div class="company-logo">
-          <div class="company-logo-container" style="background: ${logoColor};">
-            <span class="broker-name">${broker.name}</span>
-          </div>
-        </div>
-        <div class="company-info">
-          <div class="company-rating">
-            <div class="company-stars">
-              ${starsHtml}
-            </div>
-          </div>
-          <div class="company-license">
-            <div class="company-license-label">التراخيص</div>
-            <div class="company-license-value">FCA</div>
-          </div>
-          <div class="company-details">
-            <div class="company-min-deposit">أقل مبلغ للإيداع</div>
-            <div class="company-deposit-amount">${minDeposit}</div>
-          </div>
-        </div>
-        <button class="company-open-account-btn">فتح حساب</button>
-      </article>
-    `;
-  });
-
-  html += '</div>';
-  return html;
+  return `<div class="companies-grid">${brokerCards}</div>`;
 }
 
-// Generate beginner broker HTML table
+// Generate beginner broker HTML table using Handlebars
 function generateBeginnerBrokerHtml(brokers, _countryCode) {
   if (!brokers || brokers.length === 0) {
     return `
@@ -848,70 +921,20 @@ function generateBeginnerBrokerHtml(brokers, _countryCode) {
     `;
   }
 
-  let html = '<div class="broker-table-wrapper">';
-  html += '<table class="broker-table">';
+  const topBrokers = brokers.slice(0, 4).map((broker, index) => ({
+    name: broker.name,
+    logoColor: getBrokerLogoColor(broker.name),
+    minDeposit: broker.min_deposit || 0,
+    rating: broker.rating || 0,
+    starsHtml: generateStarsHtml(broker.rating),
+    position: index + 1,
+    brokerId: broker.id
+  }));
 
-  // Header
-  html += `
-    <thead>
-      <tr class="table-header">
-        <th class="header-cell company-header">الشركة</th>
-        <th class="header-cell deposit-header">أقل مبلغ للإيداع</th>
-        <th class="header-cell rating-header">التقييم</th>
-      </tr>
-    </thead>
-  `;
-
-  // Broker rows - limit to top 4 for beginner table
-  const topBrokers = brokers.slice(0, 4);
-  html += '<tbody>';
-
-  topBrokers.forEach((broker, index) => {
-    const minDeposit = broker.min_deposit || 0;
-    const rating = broker.rating || 0;
-    const logoColor = getBrokerLogoColor(broker.name);
-
-    html += `
-      <tr class="broker-row" data-position="${index + 1}" data-broker-id="${broker.id}">
-        <td class="broker-cell company-cell">
-          <div class="company-info">
-            <div class="company-logo" style="background: ${logoColor}; ${logoColor === '#fbbf24' ? 'color: #1f2937' : ''}">
-              <span class="logo-text">${broker.name}</span>
-            </div>
-            <span class="company-name">${broker.name}</span>
-          </div>
-        </td>
-        <td class="broker-cell deposit-cell">
-          <span class="deposit-amount">${minDeposit}</span>
-        </td>
-        <td class="broker-cell rating-cell">
-          <span class="rating-value">${rating}/5</span>
-        </td>
-      </tr>
-    `;
-  });
-
-  html += '</tbody>';
-
-  // Footer
-  html += `
-    <tfoot>
-      <tr>
-        <td colspan="3" class="table-footer">
-          <div class="footer-content">
-            <span class="footer-icon">⚡</span>
-            <span class="footer-text">أفضل شركات التداول للمبتدئين</span>
-          </div>
-        </td>
-      </tr>
-    </tfoot>
-  `;
-
-  html += '</table></div>';
-  return html;
+  return BEGINNER_BROKER_TEMPLATE({ brokers: topBrokers });
 }
 
-// Generate popular broker table HTML
+// Generate popular broker table HTML using Handlebars
 function generatePopularBrokerHtml(brokers, _countryCode) {
   if (!brokers || brokers.length === 0) {
     return `
@@ -921,82 +944,19 @@ function generatePopularBrokerHtml(brokers, _countryCode) {
     `;
   }
 
-  let html = '<div class="popular-broker-table-wrapper">';
-  html += '<table class="popular-broker-table">';
+  const topBrokers = brokers.slice(0, 4).map((broker, index) => ({
+    name: broker.name,
+    logoColor: getBrokerLogoColor(broker.name),
+    investorCount: broker.investor_count || '1.5M+',
+    foundingYear: broker.founding_year || '2010',
+    position: index + 1,
+    brokerId: broker.id
+  }));
 
-  // Header
-  html += `
-    <thead>
-      <tr class="popular-table-header">
-        <th class="popular-header-cell popular-company-header">الشركة</th>
-        <th class="popular-header-cell popular-investors-header">عدد المستثمرين</th>
-        <th class="popular-header-cell popular-founding-header">سنة التأسيس</th>
-      </tr>
-    </thead>
-  `;
-
-  // Broker rows - limit to top 4 for popular table
-  const topBrokers = brokers.slice(0, 4);
-  html += '<tbody>';
-
-  topBrokers.forEach((broker, index) => {
-    const investorCount = broker.investor_count || '1.5M+';
-    const foundingYear = broker.founding_year || '2010';
-    const logoColor = getBrokerLogoColor(broker.name);
-
-    html += `
-      <tr class="popular-broker-row" data-position="${index + 1}" data-broker-id="${broker.id}">
-        <td class="popular-broker-cell popular-company-cell">
-          <div class="popular-company-info">
-            <div class="popular-company-logo" style="background: ${logoColor}; ${logoColor === '#fbbf24' ? 'color: #1f2937' : ''}">
-              <span class="popular-logo-text">${broker.name}</span>
-            </div>
-            <span class="popular-company-name">${broker.name}</span>
-          </div>
-        </td>
-        <td class="popular-broker-cell popular-investors-cell">
-          <span class="popular-investors-count">${investorCount}</span>
-        </td>
-        <td class="popular-broker-cell popular-founding-cell">
-          <span class="popular-founding-year">${foundingYear}</span>
-        </td>
-      </tr>
-    `;
-  });
-
-  html += '</tbody>';
-
-  // Footer
-  html += `
-    <tfoot>
-      <tr>
-        <td colspan="3" class="popular-table-footer">
-          <div class="popular-footer-content">
-            <span class="popular-footer-icon">🔥</span>
-            <span class="popular-footer-text">أشهر شركات التداول</span>
-          </div>
-        </td>
-      </tr>
-    </tfoot>
-  `;
-
-  html += '</table></div>';
-  return html;
+  return POPULAR_BROKER_TEMPLATE({ brokers: topBrokers });
 }
 
-// Get broker logo color based on name
-function getBrokerLogoColor(name) {
-  const colors = {
-    exness: '#fbbf24',
-    evest: '#1e40af',
-    xtb: '#dc2626',
-    avatrade: '#4f46e5',
-    default: '#6366f1',
-  };
-
-  const lowerName = name.toLowerCase();
-  return colors[lowerName] || colors.default;
-}
+// Duplicate function removed - using the one defined earlier
 
 // Get country name in Arabic
 function getCountryName(countryCode = 'SA') {
