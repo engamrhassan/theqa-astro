@@ -24,7 +24,7 @@ class SimpleTemplate {
           // Replace variables in the block
           blockResult = blockResult.replace(/\{\{([^}]+)\}\}/g, (varMatch, key) => {
             const trimmedKey = key.trim();
-            if (trimmedKey.startsWith('{')) {
+            if (trimmedKey.startsWith('*')) {
               // Handle unescaped content like {{{starsHtml}}}
               const unescapedKey = trimmedKey.slice(1, -1).trim();
               return item[unescapedKey] || '';
@@ -38,7 +38,7 @@ class SimpleTemplate {
       // Handle simple variables
       result = result.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
         const trimmedKey = key.trim();
-        if (trimmedKey.startsWith('{')) {
+        if (trimmedKey.startsWith('*')) {
           // Handle unescaped content like {{{starsHtml}}}
           const unescapedKey = trimmedKey.slice(1, -1).trim();
           return data[unescapedKey] || '';
@@ -61,7 +61,7 @@ const BROKER_CARD_TEMPLATE = SimpleTemplate.compile(`
   </div>
   <div class="company-info">
     <div class="company-rating">
-      <div class="company-stars">{{{starsHtml}}}</div>
+      <div class="company-stars">{{starsHtml}}</div>
     </div>
     <div class="company-license">
       <div class="company-license-label">التراخيص</div>
