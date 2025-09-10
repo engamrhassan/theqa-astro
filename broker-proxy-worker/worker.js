@@ -10,11 +10,49 @@ if (typeof globalThis.AbortController === 'undefined') {
   };
 }
 
-// Import Handlebars
-const Handlebars = require('handlebars');
+// Simple template engine (no external dependencies)
+class SimpleTemplate {
+  static compile(template) {
+    return function(data) {
+      let result = template;
+      
+      // Handle {{#each}} blocks
+      result = result.replace(/\{\{#each\s+(\w+)\}\}([\s\S]*?)\{\{\/each\}\}/g, (match, arrayKey, blockTemplate) => {
+        const array = data[arrayKey] || [];
+        return array.map(item => {
+          let blockResult = blockTemplate;
+          // Replace variables in the block
+          blockResult = blockResult.replace(/\{\{([^}]+)\}\}/g, (varMatch, key) => {
+            const trimmedKey = key.trim();
+            if (trimmedKey.startsWith('{')) {
+              // Handle unescaped content like {{{starsHtml}}}
+              const unescapedKey = trimmedKey.slice(1, -1).trim();
+              return item[unescapedKey] || '';
+            }
+            return item[trimmedKey] || '';
+          });
+          return blockResult;
+        }).join('');
+      });
+      
+      // Handle simple variables
+      result = result.replace(/\{\{([^}]+)\}\}/g, (match, key) => {
+        const trimmedKey = key.trim();
+        if (trimmedKey.startsWith('{')) {
+          // Handle unescaped content like {{{starsHtml}}}
+          const unescapedKey = trimmedKey.slice(1, -1).trim();
+          return data[unescapedKey] || '';
+        }
+        return data[trimmedKey] || '';
+      });
+      
+      return result;
+    };
+  }
+}
 
-// Handlebars Templates
-const BROKER_CARD_TEMPLATE = Handlebars.compile(`
+// Simple Templates (no external dependencies)
+const BROKER_CARD_TEMPLATE = SimpleTemplate.compile(`
 <article class="company-card" data-position="{{position}}" data-broker-id="{{brokerId}}">
   <div class="company-logo">
     <div class="company-logo-container" style="background: {{logoColor}}">
@@ -38,7 +76,7 @@ const BROKER_CARD_TEMPLATE = Handlebars.compile(`
 </article>
 `);
 
-const BEGINNER_BROKER_TEMPLATE = Handlebars.compile(`
+const BEGINNER_BROKER_TEMPLATE = SimpleTemplate.compile(`
 <div class="broker-table-container">
   <h3 class="table-title">أفضل شركات التداول للمبتدئين</h3>
   <div class="broker-table">
@@ -67,7 +105,7 @@ const BEGINNER_BROKER_TEMPLATE = Handlebars.compile(`
 </div>
 `);
 
-const POPULAR_BROKER_TEMPLATE = Handlebars.compile(`
+const POPULAR_BROKER_TEMPLATE = SimpleTemplate.compile(`
 <div class="broker-table-container">
   <h3 class="table-title">أشهر شركات التداول</h3>
   <div class="broker-table">
