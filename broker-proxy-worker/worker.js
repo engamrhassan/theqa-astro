@@ -1,3 +1,15 @@
+// AbortController polyfill for Cloudflare Workers
+if (typeof globalThis.AbortController === 'undefined') {
+  globalThis.AbortController = class AbortController {
+    constructor() {
+      this.signal = { aborted: false };
+    }
+    abort() {
+      this.signal.aborted = true;
+    }
+  };
+}
+
 // Cache monitoring and analytics system
 class CacheMonitor {
   constructor(env) {
@@ -12,7 +24,7 @@ class CacheMonitor {
   }
 
   // Track cache performance
-  async trackCacheHit(country, route, cacheKey) {
+  async trackCacheHit(country, route, _cacheKey) {
     this.metrics.hits++;
     this.trackCountry(country);
     this.trackRoute(route);
@@ -56,9 +68,9 @@ class CacheMonitor {
       await this.env.CACHE?.put('metrics:daily', JSON.stringify(metricsData), {
         expirationTtl: 86400,
       });
-    } catch (error) {
-      console.error('Failed to persist metrics:', error);
-    }
+  } catch (_error) {
+    console.error('Failed to persist metrics:', _error);
+  }
   }
 
   async getMetrics() {
@@ -67,7 +79,7 @@ class CacheMonitor {
         type: 'json',
       });
       return cached || this.metrics;
-    } catch (error) {
+    } catch {
       return this.metrics;
     }
   }
@@ -180,19 +192,24 @@ export default {
         return fetch(request);
       }
 
-      timings.staticCheck = Date.now() - startTime;
+      // Skip specific pages that don't need broker data
+      const excludedPages = [
+        '/admin',
+        '/login', 
+        '/contact',
+        '/privacy-policy',
+        '/terms-of-service',
+        '/dashboard',
+        '/cache-analyzer'
+      ];
 
-      // Check if this route should get dynamic broker data
-      const routeCheckStart = Date.now();
-      const shouldProcess = await checkDynamicRouteOptimized(
-        env.DB,
-        url.pathname
-      );
-      timings.routeCheck = Date.now() - routeCheckStart;
-
-      if (!shouldProcess) {
+      if (excludedPages.includes(url.pathname)) {
         return fetch(request);
       }
+
+      timings.staticCheck = Date.now() - startTime;
+
+      // Process all other pages
 
       // Try to get cached broker data first
       const cacheCheckStart = Date.now();
@@ -761,7 +778,7 @@ function injectBrokerData(html, brokers, countryCode, unsupportedBrokers = []) {
 }
 
 // Generate broker HTML
-function generateBrokerHtml(brokers, countryCode) {
+function generateBrokerHtml(brokers, _countryCode) {
   if (!brokers || brokers.length === 0) {
     return `
       <div style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 0.5rem;">
@@ -774,8 +791,8 @@ function generateBrokerHtml(brokers, countryCode) {
 
   brokers.forEach((broker, index) => {
     const minDeposit = broker.min_deposit || 0;
-    const rating = broker.rating || 0;
-    const description = broker.description || 'وسيط موثوق للتداول';
+    // const _rating = broker.rating || 0;
+    // const _description = broker.description || 'وسيط موثوق للتداول';
     const logoColor = getBrokerLogoColor(broker.name);
 
     // Generate star icons
@@ -822,7 +839,7 @@ function generateBrokerHtml(brokers, countryCode) {
 }
 
 // Generate beginner broker HTML table
-function generateBeginnerBrokerHtml(brokers, countryCode) {
+function generateBeginnerBrokerHtml(brokers, _countryCode) {
   if (!brokers || brokers.length === 0) {
     return `
       <div style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 0.5rem;">
@@ -895,7 +912,7 @@ function generateBeginnerBrokerHtml(brokers, countryCode) {
 }
 
 // Generate popular broker table HTML
-function generatePopularBrokerHtml(brokers, countryCode) {
+function generatePopularBrokerHtml(brokers, _countryCode) {
   if (!brokers || brokers.length === 0) {
     return `
       <div style="text-align: center; padding: 2rem; color: #6b7280; background: #f9fafb; border-radius: 0.5rem;">
@@ -1512,82 +1529,7 @@ function generateETag(brokerData, country) {
   return Math.abs(hash).toString(36);
 }
 
-// OPTIMIZATION: Cached route checking with in-memory cache
-const routeCache = new Map();
-async function checkDynamicRouteOptimized(database, pathname) {
-  const cacheKey = `route:${pathname}`;
-
-  // Check in-memory cache first
-  if (routeCache.has(cacheKey)) {
-    return routeCache.get(cacheKey);
-  }
-
-  try {
-    const decodedPath = decodeURIComponent(pathname);
-
-    // Quick hardcoded check for common routes
-    const commonRoutes = [
-      'شركات-تداول-مرخصة-في-السعودية',
-      'منصات-تداول-العملات-الرقمية-في-الإمارات',
-      'reviews',
-      'brokers',
-      'trading-companies',
-    ];
-
-    for (const route of commonRoutes) {
-      if (decodedPath.includes(route)) {
-        routeCache.set(cacheKey, true);
-        return true;
-      }
-    }
-
-    // Fallback to database check (with timeout)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 500); // 500ms timeout
-
-    try {
-      const query = `
-        SELECT 1 as found
-        FROM dynamic_routes
-        WHERE is_active = 1 AND (
-          ? LIKE '%' || route_pattern || '%' OR
-          route_pattern LIKE '%' || ? || '%'
-        )
-        LIMIT 1
-      `;
-
-      const result = await database
-        .prepare(query)
-        .bind(decodedPath, decodedPath)
-        .first();
-      const shouldProcess = !!result?.found;
-
-      clearTimeout(timeoutId);
-      routeCache.set(cacheKey, shouldProcess);
-
-      return shouldProcess;
-    } catch (dbError) {
-      clearTimeout(timeoutId);
-      console.warn(
-        'Database route check failed, using pattern fallback:',
-        dbError
-      );
-
-      // Fallback pattern matching
-      const fallbackResult =
-        decodedPath.includes('تداول') ||
-        decodedPath.includes('broker') ||
-        decodedPath.includes('review');
-
-      routeCache.set(cacheKey, fallbackResult);
-      return fallbackResult;
-    }
-  } catch (error) {
-    console.error('Route check error:', error);
-    routeCache.set(cacheKey, false);
-    return false;
-  }
-}
+// Route checking removed - all pages are now processed
 
 // OPTIMIZATION: Single query for broker data with timeout
 async function getBrokersForCountryOptimized(database, countryCode) {
@@ -1716,11 +1658,9 @@ async function handlePerfDebug(env, request, userCountry) {
     timings.databaseError = error.message;
   }
 
-  // Test route checking
-  const routeStart = Date.now();
-  const shouldProcess = await checkDynamicRouteOptimized(env.DB, testPath);
-  timings.routeCheck = Date.now() - routeStart;
-  timings.shouldProcess = shouldProcess;
+  // Route checking removed - all pages are processed
+  timings.routeCheck = 0;
+  timings.shouldProcess = true;
 
   // Test cache performance
   const cacheStart = Date.now();
@@ -1800,7 +1740,7 @@ async function handlePerfDebug(env, request, userCountry) {
 }
 
 // Cron handler for scheduled cache warming
-export async function scheduled(event, env, ctx) {
+export async function scheduled(event, env, _ctx) {
   try {
     console.log('Cron trigger: Starting scheduled cache warming');
 
