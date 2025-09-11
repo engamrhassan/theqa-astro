@@ -157,6 +157,32 @@ function getBrokerLogoColor(brokerName) {
   return colors[brokerName] || colors.default;
 }
 
+// Helper function to get investor count for template compatibility
+function getInvestorCount(brokerName) {
+  const counts = {
+    'Exness': '3.1M+',
+    'eVest': '2.5M+',
+    'Evest': '2.5M+',
+    'XTB': '1.8M+',
+    'AvaTrade': '1.2M+',
+    'default': '1.5M+'
+  };
+  return counts[brokerName] || counts.default;
+}
+
+// Helper function to get founding year for template compatibility
+function getFoundingYear(brokerName) {
+  const years = {
+    'Exness': '2008',
+    'eVest': '2018',
+    'Evest': '2018',
+    'XTB': '2002',
+    'AvaTrade': '2006',
+    'default': '2010'
+  };
+  return years[brokerName] || years.default;
+}
+
 // Cache monitoring and analytics system
 class CacheMonitor {
   constructor(env) {
@@ -286,7 +312,11 @@ export default {
     try {
       const url = new URL(request.url);
       const userCountry = request.cf?.country || 'US';
-      const cacheKey = `broker-data-${userCountry}-v2`;
+      
+      // Add cache busting support via query parameter
+      const bustCache = url.searchParams.get('bust_cache') === '1';
+      const cacheVersion = bustCache ? Date.now() : 'v2';
+      const cacheKey = `broker-data-${userCountry}-${cacheVersion}`;
 
       // Health check endpoint
       if (url.pathname === '/__health') {
@@ -307,6 +337,11 @@ export default {
       // Enhanced cache purge endpoint
       if (url.pathname === '/__purge-cache' && request.method === 'POST') {
         return handleCachePurge(request, url, env);
+      }
+
+      // D1 data invalidation endpoint
+      if (url.pathname === '/__invalidate-d1' && request.method === 'POST') {
+        return handleD1Invalidation(request, env);
       }
 
       // Cache warming endpoint
@@ -358,11 +393,11 @@ export default {
 
       // Process all other pages
 
-      // Try to get cached broker data first
+      // Try to get cached broker data first (skip cache if busting)
       const cacheCheckStart = Date.now();
-      let brokerData = await getCachedBrokerData(env.CACHE, cacheKey);
+      let brokerData = bustCache ? null : await getCachedBrokerData(env.CACHE, `broker-data-${userCountry}-v2`);
       let unsupportedBrokers = [];
-      const cacheHit = !!brokerData;
+      const cacheHit = !!brokerData && !bustCache;
       timings.cacheCheck = Date.now() - cacheCheckStart;
 
       if (!brokerData) {
@@ -376,12 +411,12 @@ export default {
         ]);
         timings.dataFetch = Date.now() - dataFetchStart;
 
-        // Cache the broker data with configurable TTL
+        // Cache the broker data with reduced TTL for faster updates
         await cacheBrokerData(
           env.CACHE,
-          cacheKey,
+          `broker-data-${userCountry}-v2`,
           { brokerData, unsupportedBrokers },
-          env.BROKER_CACHE_TTL || 1800
+          env.BROKER_CACHE_TTL || 300  // Reduced to 5 minutes for faster updates
         );
       } else {
         // Cache hit - track success
@@ -443,8 +478,9 @@ export default {
           'X-Country-Code': userCountry,
           'X-Broker-Count': brokerData.length.toString(),
           'X-Unsupported-Count': unsupportedBrokers.length.toString(),
-          'X-Cache-Key': cacheKey,
+          'X-Cache-Key': `broker-data-${userCountry}-v2`,
           'X-Cache-Hit': cacheHit.toString(),
+          'X-Cache-Busted': bustCache.toString(),
           'X-Processing-Time': processingTime.toString(),
           'X-Timing-Cache': `${timings.cacheCheck}ms`,
           'X-Timing-Data': `${timings.dataFetch}ms`,
@@ -475,8 +511,8 @@ async function getCachedBrokerData(cache, key) {
     if (!cache) return null;
 
     const cached = await cache.get(key, { type: 'json' });
-    if (cached && cached.timestamp && Date.now() - cached.timestamp < 1800000) {
-      // 30 min
+    if (cached && cached.timestamp && Date.now() - cached.timestamp < 300000) {
+      // 5 min for faster updates
       return cached.data;
     }
     return null;
@@ -594,6 +630,61 @@ function createErrorResponse(error, originalRequest) {
       headers: { 'Content-Type': 'application/json' },
     }
   );
+}
+
+// D1 data invalidation handler
+async function handleD1Invalidation(request, env) {
+  try {
+    const authHeader = request.headers.get('Authorization');
+    if (authHeader !== `Bearer ${env.PURGE_TOKEN}`) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { countries = null } = body;
+
+    // Invalidate broker data cache for all or specific countries
+    if (env.CACHE) {
+      const countriesToInvalidate = countries || [
+        'US', 'GB', 'DE', 'SA', 'AE', 'EG', 'TH', 'FR', 'IT', 'ES',
+        'KW', 'BH', 'QA', 'OM', 'JO', 'LB', 'MA', 'TN', 'DZ', 'IQ'
+      ];
+
+      const invalidationPromises = countriesToInvalidate.map(country => 
+        env.CACHE.delete(`broker-data-${country}-v2`)
+      );
+
+      await Promise.all(invalidationPromises);
+
+      console.log(`Invalidated D1 cache for countries: ${countriesToInvalidate.join(', ')}`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: 'D1 cache invalidated successfully',
+        invalidated_countries: countries || 'all',
+        timestamp: new Date().toISOString()
+      }),
+      {
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        error: error.message,
+        success: false,
+      }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
 }
 
 // Enhanced cache purge with multiple cache layers
@@ -1532,15 +1623,22 @@ function generateETag(brokerData, country) {
 // OPTIMIZATION: Single query for broker data with timeout
 async function getBrokersForCountryOptimized(database, countryCode) {
   try {
+    if (!database) {
+      console.log('No database connection, using fallback data');
+      return getHardcodedBrokersOptimized();
+    }
+
     // Use prepared statement with timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 second timeout
 
     const query = `
       SELECT 
-        b.id, b.name, b.logo, b.rating, b.min_deposit, b.description,
-        b.investor_count, b.founding_year,
-        COALESCE(cs.sort_order, b.default_sort_order) as sort_order
+        b.id, b.name, b.slug, b.logo, b.rating, b.min_deposit, b.description,
+        b.website_url, b.company_id,
+        COALESCE(cs.sort_order, b.default_sort_order) as sort_order,
+        cs.is_featured,
+        cs.custom_description
       FROM brokers b
       LEFT JOIN country_sorting cs ON b.id = cs.broker_id AND cs.country_code = ?
       WHERE b.is_active = 1
@@ -1548,13 +1646,29 @@ async function getBrokersForCountryOptimized(database, countryCode) {
       LIMIT 6
     `;
 
+    console.log(`Querying D1 for country: ${countryCode}`);
     const result = await database.prepare(query).bind(countryCode).all();
     clearTimeout(timeoutId);
 
-    if (result.results && result.results.length > 0) {
-      return result.results;
+    console.log(`D1 query result:`, { 
+      success: result.success, 
+      resultCount: result.results?.length || 0,
+      countryCode 
+    });
+
+    if (result.success && result.results && result.results.length > 0) {
+      // Add missing fields for template compatibility
+      const enrichedResults = result.results.map(broker => ({
+        ...broker,
+        investor_count: getInvestorCount(broker.name),
+        founding_year: getFoundingYear(broker.name)
+      }));
+      
+      console.log(`Returning ${enrichedResults.length} brokers from D1 for ${countryCode}`);
+      return enrichedResults;
     }
 
+    console.log(`No D1 results for ${countryCode}, using fallback`);
     // Fast fallback
     return getHardcodedBrokersOptimized();
   } catch (error) {

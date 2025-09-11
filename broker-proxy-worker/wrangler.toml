@@ -5,7 +5,7 @@ compatibility_date = "2025-09-04"
 [vars]
 PURGE_TOKEN = "dfdf76dfdfyuh343kfd63hje3"
 CACHE_TTL = 3600
-BROKER_CACHE_TTL = 1800
+BROKER_CACHE_TTL = 300
 MAX_BROKERS_PER_COUNTRY = 6
 ENVIRONMENT = "production"
 
